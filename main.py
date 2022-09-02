@@ -161,7 +161,7 @@ def backup ():
 def do_schedule ():
     schedule.every().hour.do(backup)
     if (True):
-        schedule.every().days.at("00:00").do(send_messages)
+        schedule.every().days.at("07:04").do(send_messages)
     while True:
         schedule.run_pending()
         time.sleep(1)
