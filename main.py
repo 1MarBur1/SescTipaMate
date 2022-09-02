@@ -156,12 +156,14 @@ def send_messages ():
 # Backup
 def backup ():
     bot.send_message(926132680, str(joinedUsers))
+def printe ():
+    print("hello")
 
 # Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
 def do_schedule ():
     schedule.every().hour.do(backup)
     if (True):
-        schedule.every().days.at("07:11").do(print("hello"))
+        schedule.every().days.at("07:13").do(printe)
     while True:
         schedule.run_pending()
         time.sleep(1)
