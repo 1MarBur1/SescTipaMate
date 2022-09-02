@@ -32,13 +32,23 @@ def send_welcome(msg):
         markup = types.InlineKeyboardMarkup()
         button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
         button2 = types.InlineKeyboardButton("Посмотреть расписание на завтра", callback_data="openTomorrow")
-        markup.add(button1, button2)
+        markup.add(button1)
+        markup.add(button2)
         bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)", reply_markup=markup)
     else: 
         markup = types.InlineKeyboardMarkup()
         button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
+        button2 = types.InlineKeyboardButton("Посмотреть расписание на завтра", callback_data="openTomorrow")
         markup.add(button1)
+        markup.add(button2)
         bot.send_message(msg.chat.id, "Воу-воу, друг, ты уже есть в моих списках, не переживай, я тебя оповещу!", reply_markup=markup)
+
+@bot.message_handler(commands=['admin'])
+def open_adming(msg):
+    if (msg.chat.id == 926132680):
+        bot.send_message(msg.chat.id, str(joinedUsers))
+    else:
+        bot.send_message(msg.chat.id, "У тебя нет админки =/")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
@@ -143,10 +153,15 @@ def send_messages ():
     for i in joinedUsers: 
         bot.send_message(i, messageforuser)
 
-# Используем функцию send_messages раз в день, в установленное время
+# Backup
+def backup ():
+    bot.send_message(926132680, str(joinedUsers))
+
+# Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
 def do_schedule ():
-    if (tommorowDate.weekday != 6):
-        schedule.every().days.at("18:00").do(send_messages)
+    schedule.every().hour.do(backup)
+    if (True):
+        schedule.every().days.at("00:00").do(send_messages)
     while True:
         schedule.run_pending()
         time.sleep(1)
