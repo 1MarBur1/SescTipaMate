@@ -162,7 +162,7 @@ def printe ():
 # Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
 def do_schedule ():
     schedule.every().hour.do(backup)
-    if (True):
+    if (weekday_ != 6):
         schedule.every().days.at("01:00").do(printe)
     while True:
         schedule.run_pending()
