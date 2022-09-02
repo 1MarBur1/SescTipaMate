@@ -163,7 +163,7 @@ def printe ():
 def do_schedule ():
     schedule.every().hour.do(backup)
     if (True):
-        schedule.every().days.at("07:16").do(printe)
+        schedule.every().days.at("01:00").do(printe)
     while True:
         schedule.run_pending()
         time.sleep(1)
