@@ -16,7 +16,7 @@ joinedFile = open("./ids.txt", "r")
 joinedUsers = set()
 
 for line in joinedFile:
-    joinedUsers.add(line.strip())
+    joinedUsers.add(int(line.strip()))
 joinedFile.close()
 
 lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
