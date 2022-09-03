@@ -1,4 +1,3 @@
-from dataclasses import replace
 import schedule
 import time
 import json
@@ -156,14 +155,11 @@ def send_messages ():
 # Backup
 def backup ():
     bot.send_message(926132680, str(joinedUsers))
-def printe ():
-    print("hello")
 
 # Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
 def do_schedule ():
     schedule.every().hour.do(backup)
-    if (weekday_ != 6):
-        schedule.every().days.at("01:00").do(printe)
+    schedule.every().days.at("01:00").do(send_messages)
     while True:
         schedule.run_pending()
         time.sleep(1)
