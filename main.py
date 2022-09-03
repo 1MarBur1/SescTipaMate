@@ -5,28 +5,33 @@ import telebot
 from telebot import types
 import datetime
 import requests
+import sys
 from threading import Thread
 
 now = datetime.datetime.now()
 weekday_ = datetime.datetime.today().weekday() + 1
 tommorowDate = datetime.datetime.today() + datetime.timedelta(days=1)
 
-joinedFile = open("./ids.txt", "r")
 joinedUsers = set()
-
-for line in joinedFile:
-    joinedUsers.add(int(line.strip()))
-joinedFile.close()
+if (not "testing" in sys.argv):
+    joinedFile = open("./ids.txt", "r")
+    for line in joinedFile:
+        joinedUsers.add(int(line.strip()))
+    joinedFile.close()
 
 lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 
-bot = telebot.TeleBot("5435533576:AAERV3w9cDsGraZ8DiTCjG2AMjva8vD9Wo8")
+if ("testing" in sys.argv):
+    bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
+else:
+    bot = telebot.TeleBot("5435533576:AAERV3w9cDsGraZ8DiTCjG2AMjva8vD9Wo8")
 
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
     if not (msg.chat.id in joinedUsers):
-        joinedFile = open("./ids.txt", "a")
-        joinedFile.write(str(msg.chat.id) + "\n")
+        if (not "testing" in sys.argv):
+            joinedFile = open("./ids.txt", "a")
+            joinedFile.write(str(msg.chat.id) + "\n")
         joinedUsers.add(msg.chat.id)
         markup = types.InlineKeyboardMarkup()
         button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
