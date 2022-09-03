@@ -26,7 +26,7 @@ lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-1
 if ("testing" in sys.argv):
     bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
 else:
-    bot = process.env.BOT_AUTH_KEY
+    bot = telebot.TeleBot(process.env.BOT_AUTH_KEY)
 
 defaultButtons = types.InlineKeyboardMarkup()
 button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
@@ -40,7 +40,7 @@ defaultButtons.add(button_dnevnik)
 def help(msg):
     bot.send_message(msg.chat.id, "/start - добавляет тебя в рассылку\n/menu - открывает меню, оттуда можно посмотреть расписание на сегодня, завтра, открыть полезные ресуры и т.д.\n/today - отправляет расписание на сегодня\n/admin - только для администраторов\n/deactivate - удаляет тебя из рассылки")
 
-@bot.message_handler(commands=['start'])
+@bot.message_handler(commands=['start'])п
 def send_welcome(msg):
     if not (msg.chat.id in joinedUsers):
         joinedUsers.add(msg.chat.id)
