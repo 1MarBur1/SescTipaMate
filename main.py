@@ -164,7 +164,8 @@ def backup ():
 # Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
 def do_schedule ():
     schedule.every().hour.do(backup)
-    schedule.every().days.at("13:15").do(send_messages)
+    if (weekday_ != 6):
+        schedule.every().days.at("13:00").do(send_messages)
     while True:
         schedule.run_pending()
         time.sleep(1)
