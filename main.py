@@ -19,7 +19,7 @@ if (not "testing" in sys.argv):
         joinedUsers.add(int(line.strip()))
     joinedFile.close()
 
-admins = [926132680]
+admins = [926132680, 1145867325, 5027348167]
 lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 
 if ("testing" in sys.argv):
