@@ -19,6 +19,7 @@ if (not "testing" in sys.argv):
         joinedUsers.add(int(line.strip()))
     joinedFile.close()
 
+admins = [926132680]
 lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 
 if ("testing" in sys.argv):
@@ -26,33 +27,45 @@ if ("testing" in sys.argv):
 else:
     bot = telebot.TeleBot("5435533576:AAERV3w9cDsGraZ8DiTCjG2AMjva8vD9Wo8")
 
+defaultButtons = types.InlineKeyboardMarkup()
+button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
+button2 = types.InlineKeyboardButton("Посмотреть расписание на завтра", callback_data="openTomorrow")
+button_dnevnik = types.InlineKeyboardButton("Открыть эл. дневник", url='https://lycreg.urfu.ru/')
+defaultButtons.add(button1)
+defaultButtons.add(button2)
+defaultButtons.add(button_dnevnik)
+
+@bot.message_handler(commands=['help'])
+def help(msg):
+    bot.send_message(msg.chat.id, "/start - добавляет тебя в рассылку\n/menu - открывает меню, оттуда можно посмотреть расписание на сегодня, завтра, открыть полезные ресуры и т.д.\n/today - отправляет расписание на сегодня\n/admin - только для администраторов\n/deactivate - удаляет тебя из рассылки")
+
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
     if not (msg.chat.id in joinedUsers):
-        if (not "testing" in sys.argv):
-            joinedFile = open("./ids.txt", "a")
-            joinedFile.write(str(msg.chat.id) + "\n")
         joinedUsers.add(msg.chat.id)
-        markup = types.InlineKeyboardMarkup()
-        button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
-        button2 = types.InlineKeyboardButton("Посмотреть расписание на завтра", callback_data="openTomorrow")
-        markup.add(button1)
-        markup.add(button2)
-        bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)", reply_markup=markup)
+       
+        bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)")
     else: 
-        markup = types.InlineKeyboardMarkup()
-        button1 = types.InlineKeyboardButton("Посмотреть расписание на сегодня", callback_data="openToday")
-        button2 = types.InlineKeyboardButton("Посмотреть расписание на завтра", callback_data="openTomorrow")
-        markup.add(button1)
-        markup.add(button2)
-        bot.send_message(msg.chat.id, "Воу-воу, друг, ты уже есть в моих списках, не переживай, я тебя оповещу!", reply_markup=markup)
+        bot.send_message(msg.chat.id, "Друг, ты уже есть в моих списках, не переживай, я тебя оповещу!")
+
+@bot.message_handler(commands=['menu'])
+def open_menu(msg):
+    bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты в самой невероятной менюшке этого города", reply_markup=defaultButtons)
 
 @bot.message_handler(commands=['admin'])
 def open_adming(msg):
-    if (msg.chat.id == 926132680):
+    if (msg.chat.id in admins):
         bot.send_message(msg.chat.id, str(joinedUsers))
     else:
-        bot.send_message(msg.chat.id, "У тебя нет админки =/")
+        bot.send_message(msg.chat.id, "У тебя нет админки =/\nЗа ней обращайся к @xmarburx")
+
+@bot.message_handler(commands=['deactivate'])
+def deactivate_mailing(msg):
+    if(msg.chat.id in joinedUsers):
+        joinedUsers.remove(msg.chat.id)
+        bot.send_message(msg.chat.id, "Я удалил тебя, больше не буду присылать тебе сообщения автоматически. Но ты все так же можешь смотреть расписание с помощью /menu")
+    else:
+        bot.send_message(msg.chat.id, "Ты не подписан на рассылку, поэтому я не могу тебя удалить из нее =)")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
