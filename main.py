@@ -128,10 +128,10 @@ def send_messages ():
     response = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_ + 1) + "&group=22")
     data = json.loads(response.text)
 
-    messageforuser = "Привет! " + str(tommorowDate.date())+ " у тебя будет такое расписание: \n"
+    messageforuser = "Привет! Я к тебе с рассылкой, " + str(tommorowDate.date())+ " у тебя будет такое расписание: \n"
     n = 0
     if (not len(data["lessons"])):
-        messageforuser = "Привет! " + str(tommorowDate.date())+ " не запланироавно никаких уроков =("
+        messageforuser = "Привет! Я к тебе с рассылкой, " + str(tommorowDate.date())+ " не запланироавно никаких уроков =("
 
     for i in range(len(data["lessons"])):
         if (i+1<len(data["lessons"])):
@@ -159,7 +159,7 @@ def backup ():
 # Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
 def do_schedule ():
     schedule.every().hour.do(backup)
-    schedule.every().days.at("13:10").do(send_messages)
+    schedule.every().days.at("13:15").do(send_messages)
     while True:
         schedule.run_pending()
         time.sleep(1)
