@@ -40,7 +40,7 @@ defaultButtons.add(button_dnevnik)
 def help(msg):
     bot.send_message(msg.chat.id, "/start - добавляет тебя в рассылку\n/menu - открывает меню, оттуда можно посмотреть расписание на сегодня, завтра, открыть полезные ресуры и т.д.\n/today - отправляет расписание на сегодня\n/admin - только для администраторов\n/deactivate - удаляет тебя из рассылки")
 
-@bot.message_handler(commands=['start'])п
+@bot.message_handler(commands=['start'])
 def send_welcome(msg):
     if not (msg.chat.id in joinedUsers):
         joinedUsers.add(msg.chat.id)
