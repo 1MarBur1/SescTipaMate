@@ -1,6 +1,5 @@
 import schedule
 import time
-import json
 import telebot
 from telebot import types
 import datetime
@@ -8,9 +7,11 @@ import requests
 import sys
 from threading import Thread
 
-now = datetime.datetime.now()
-weekday_ = datetime.datetime.today().weekday() + 1
-tommorowDate = datetime.datetime.today() + datetime.timedelta(days=1)
+from format_data import formatData
+
+today = datetime.datetime.today() + datetime.timedelta(hours=5)
+weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
+tommorowDate = datetime.datetime.today() + datetime.timedelta(days=1, hours=5)
 
 joinedUsers = set()
 if (not "testing" in sys.argv):
@@ -20,7 +21,6 @@ if (not "testing" in sys.argv):
     joinedFile.close()
 
 admins = [926132680, 1145867325, 5027348167]
-lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 
 if ("testing" in sys.argv):
     bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
@@ -46,16 +46,26 @@ def send_welcome(msg):
        
         bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)")
     else: 
-        bot.send_message(msg.chat.id, "Друг, ты уже есть в моих списках, не переживай, я тебя оповещу!")
+        messageforlogineduser = "Друг, ты уже есть в моих списках, не переживай, я тебя оповещу!"
+        if (msg.chat.id < 0):
+            messageforlogineduser = "Эта группа уже добавлена! Если ты хочешь добавить себя это нужно сделать в личных сообщениях"
+        bot.send_message(msg.chat.id, messageforlogineduser)
 
 @bot.message_handler(commands=['menu'])
 def open_menu(msg):
     bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты в самой невероятной менюшке этого города", reply_markup=defaultButtons)
 
 @bot.message_handler(commands=['admin'])
-def open_adming(msg):
+def open_admin(msg):
+    ids_list = f"Сейчас в боте {len(joinedUsers)} аккаунтов:\n"
+    ids_list += "```\n"
+    for i in joinedUsers:
+        ids_list += "\n"
+        ids_list += str(i)
+    ids_list += "```"
+
     if (msg.chat.id in admins):
-        bot.send_message(msg.chat.id, str(joinedUsers))
+        bot.send_message(msg.chat.id, ids_list, parse_mode="Markdown")
     else:
         bot.send_message(msg.chat.id, "У тебя нет админки =/\nЗа ней обращайся к @xmarburx")
 
@@ -70,116 +80,57 @@ def deactivate_mailing(msg):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.data == "openToday":
-        responsetoday = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_ % 7) + "&group=22")
-        todaydata = json.loads(responsetoday.text)
-        messageforuser = "Сегодня, " + str(now.date())+ ", у тебя такое расписание: \n"
-        n = 0
-        if (not len(todaydata["lessons"])):
-            messageforuser = "Сегодня не запланироавно никаких уроков =("
-
-        for i in range(len(todaydata["lessons"])):
-            if (i+1<len(todaydata["lessons"])):
-                if (todaydata["lessons"][i-1]["number"] == todaydata["lessons"][i]["number"]):
-                    n += 1
-                elif (todaydata["lessons"][i+1]["number"] == todaydata["lessons"][i]["number"]):
-                    messageforuser += "\n"
-                    messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | " + todaydata["lessons"][i]["subject"] + " | " + "2 группы: " +  todaydata["lessons"][i+1]["auditory"] + ", " + todaydata["lessons"][i]["auditory"] + "каб."
-                else:
-                    messageforuser += "\n"
-                    messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | "  + todaydata["lessons"][i]["subject"] + " | " + todaydata["lessons"][i]["auditory"] + "каб."
-            else:
-                messageforuser += "\n"
-                messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | "  + todaydata["lessons"][i]["subject"] + " | " + todaydata["lessons"][i]["auditory"] + "каб."
-
-        bot.send_message(call.message.chat.id, messageforuser)
+        responsetoday = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={weekday_}&group=22")
+        
+        bot.send_message(call.message.chat.id, formatData(response = responsetoday, date = today.date(), mailing = False))
     if call.data == "openTomorrow":
-        responsetomorrow = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str((weekday_ + 1) % 7) + "&group=22")
-        tommorowdata = json.loads(responsetomorrow.text)
-        messageforuser = "Завтра, " + str(tommorowDate.date())+ ", у тебя будет такое расписание: \n"
-        n = 0
-        if (not len(tommorowdata["lessons"])):
-            messageforuser = "Завтра не запланироавно никаких уроков =("
+        responsetomorrow = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={(weekday_ + 1) % 7}&group=22")
 
-        for i in range(len(tommorowdata["lessons"])):
-            if (i+1<len(tommorowdata["lessons"])):
-                if (tommorowdata["lessons"][i-1]["number"] == tommorowdata["lessons"][i]["number"]):
-                    n += 1
-                elif (tommorowdata["lessons"][i+1]["number"] == tommorowdata["lessons"][i]["number"]):
-                    messageforuser += "\n"
-                    messageforuser += lessonsTime[tommorowdata["lessons"][i]["number"]-1] + " | " + tommorowdata["lessons"][i]["subject"] + " | " + "2 группы: " +  tommorowdata["lessons"][i+1]["auditory"] + ", " + tommorowdata["lessons"][i]["auditory"] + "каб."
-                else:
-                    messageforuser += "\n"
-                    messageforuser += lessonsTime[tommorowdata["lessons"][i]["number"]-1] + " | "  + tommorowdata["lessons"][i]["subject"] + " | " + tommorowdata["lessons"][i]["auditory"] + "каб."
-            else:
-                messageforuser += "\n"
-                messageforuser += lessonsTime[tommorowdata["lessons"][i]["number"]-1] + " | "  + tommorowdata["lessons"][i]["subject"] + " | " + tommorowdata["lessons"][i]["auditory"] + "каб."
-
-        bot.send_message(call.message.chat.id, messageforuser)
+        bot.send_message(call.message.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing = False))
 
 @bot.message_handler(commands=['today'])
 def send_today(msg):
-    responsetoday = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_) + "&group=22")
-    todaydata = json.loads(responsetoday.text)
-    messageforuser = "Привет! Сегодня у тебя будет такое расписание: \n"
-    n = 0
-    if (not len(todaydata["lessons"])):
-        messageforuser = "Привет! Сегондя не запланироавно никаких уроков =("
+    responsetoday = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={weekday_}&group=22")
 
-    for i in range(len(todaydata["lessons"])):
-        if (i+1<len(todaydata["lessons"])):
-            if (todaydata["lessons"][i-1]["number"] == todaydata["lessons"][i]["number"]):
-                n += 1
-            elif (todaydata["lessons"][i+1]["number"] == todaydata["lessons"][i]["number"]):
-                messageforuser += "\n"
-                messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | " + todaydata["lessons"][i]["subject"] + " | " + "2 группы: " +  todaydata["lessons"][i+1]["auditory"] + ", " + todaydata["lessons"][i]["auditory"] + "каб."
-            else:
-                messageforuser += "\n"
-                messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | "  + todaydata["lessons"][i]["subject"] + " | " + todaydata["lessons"][i]["auditory"] + "каб."
-        else:
-            messageforuser += "\n"
-            messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | "  + todaydata["lessons"][i]["subject"] + " | " + todaydata["lessons"][i]["auditory"] + "каб."
-
-    bot.send_message(msg.chat.id, messageforuser)
+    bot.send_message(msg.chat.id, formatData(response = responsetoday, date = today.date(), mailing=False))
 
 # Функия, отправляющая всем пользователям расписание на завтра 
-def send_messages ():
-    response = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str((weekday_ + 1)%7) + "&group=22")
-    data = json.loads(response.text)
-
-    messageforuser = "Привет! Я к тебе с рассылкой, " + str(tommorowDate.date())+ " у тебя будет такое расписание: \n"
-    n = 0
-    if (not len(data["lessons"])):
-        messageforuser = "Привет! Я к тебе с рассылкой, " + str(tommorowDate.date())+ " не запланироавно никаких уроков =("
-
-    for i in range(len(data["lessons"])):
-        if (i+1<len(data["lessons"])):
-            if (data["lessons"][i-1]["number"] == data["lessons"][i]["number"]):
-                n += 1
-            elif (data["lessons"][i+1]["number"] == data["lessons"][i]["number"]):
-                messageforuser += "\n"
-                messageforuser += lessonsTime[data["lessons"][i]["number"]-1] + " | " + data["lessons"][i]["subject"] + " | " + "2 группы: " +  data["lessons"][i+1]["auditory"] + ", " + data["lessons"][i]["auditory"] + "каб."
-            else:
-                messageforuser += "\n"
-                messageforuser += lessonsTime[data["lessons"][i]["number"]-1] + " | "  + data["lessons"][i]["subject"] + " | " + data["lessons"][i]["auditory"] + "каб."
-        else:
-            messageforuser += "\n"
-            messageforuser += lessonsTime[data["lessons"][i]["number"]-1] + " | "  + data["lessons"][i]["subject"] + " | " + data["lessons"][i]["auditory"] + "каб."
-
-
+def send_messages (date, data_weekday):
+    response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={data_weekday}&group=22")
 
     for i in joinedUsers: 
-        bot.send_message(i, messageforuser)
+        bot.send_message(i, formatData(response = response, date = date, mailing=True))
+
+
+def send_today_mail():
+    send_messages(date = today.date(), data_weekday=weekday_)
+
+def send_tommorow_mail():
+    send_messages(date = tommorowDate.date(), data_weekday=(weekday_+1)%7)
 
 # Backup
 def backup ():
     bot.send_message(926132680, str(joinedUsers))
 
-# Используем функцию send_messages раз в день, в установленное время, так же отправляем backup мне в тг
+# Обновляем все переменные связаные со временем (иначе у бота всегда будет та дата, которая была при запуске)
+def update_dates ():
+    global today 
+    global weekday_ 
+    global tommorowDate 
+
+    today = datetime.datetime.today() + datetime.timedelta(hours=5)
+    weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
+    tommorowDate = datetime.datetime.now() + datetime.timedelta(days=1)
+
+# Здесь устанавливаем всякие таймера на апдейт переменных раз в день, время рассылок и т.д.
 def do_schedule ():
     schedule.every().hour.do(backup)
-    if (weekday_ != 6):
-        schedule.every().days.at("13:00").do(send_messages)
-        schedule.every().days.at("02:00").do(send_messages)
+    schedule.every().days.at("19:00").do(update_dates)
+
+    if weekday_ != 6:
+        schedule.every().days.at("13:00").do(send_tommorow_mail)
+    if weekday_ != 7:
+        schedule.every().days.at("02:00").do(send_today_mail)
     while True:
         schedule.run_pending()
         time.sleep(1)
