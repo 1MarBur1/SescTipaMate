@@ -143,7 +143,7 @@ def send_today(msg):
 
 # Функия, отправляющая всем пользователям расписание на завтра 
 def send_messages ():
-    response = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_ + 1) + "&group=22")
+    response = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str((weekday_ + 1)%7) + "&group=22")
     data = json.loads(response.text)
 
     messageforuser = "Привет! Я к тебе с рассылкой, " + str(tommorowDate.date())+ " у тебя будет такое расписание: \n"
@@ -179,6 +179,7 @@ def do_schedule ():
     schedule.every().hour.do(backup)
     if (weekday_ != 6):
         schedule.every().days.at("13:00").do(send_messages)
+        schedule.every().days.at("02:00").do(send_messages)
     while True:
         schedule.run_pending()
         time.sleep(1)
