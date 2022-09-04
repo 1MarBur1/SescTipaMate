@@ -70,7 +70,7 @@ def deactivate_mailing(msg):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.data == "openToday":
-        responsetoday = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_) + "&group=22")
+        responsetoday = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_ % 7) + "&group=22")
         todaydata = json.loads(responsetoday.text)
         messageforuser = "Сегодня, " + str(now.date())+ ", у тебя такое расписание: \n"
         n = 0
@@ -93,26 +93,26 @@ def callback_inline(call):
 
         bot.send_message(call.message.chat.id, messageforuser)
     if call.data == "openTomorrow":
-        responsetomorrow = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str(weekday_ + 1) + "&group=22")
-        todaydata = json.loads(responsetomorrow.text)
-        messageforuser = "Завтра, " + str(now.date())+ ", у тебя будет такое расписание: \n"
+        responsetomorrow = requests.get("https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday=" + str((weekday_ + 1) % 7) + "&group=22")
+        tommorowdata = json.loads(responsetomorrow.text)
+        messageforuser = "Завтра, " + str(tommorowDate.date())+ ", у тебя будет такое расписание: \n"
         n = 0
-        if (not len(todaydata["lessons"])):
+        if (not len(tommorowdata["lessons"])):
             messageforuser = "Завтра не запланироавно никаких уроков =("
 
-        for i in range(len(todaydata["lessons"])):
-            if (i+1<len(todaydata["lessons"])):
-                if (todaydata["lessons"][i-1]["number"] == todaydata["lessons"][i]["number"]):
+        for i in range(len(tommorowdata["lessons"])):
+            if (i+1<len(tommorowdata["lessons"])):
+                if (tommorowdata["lessons"][i-1]["number"] == tommorowdata["lessons"][i]["number"]):
                     n += 1
-                elif (todaydata["lessons"][i+1]["number"] == todaydata["lessons"][i]["number"]):
+                elif (tommorowdata["lessons"][i+1]["number"] == tommorowdata["lessons"][i]["number"]):
                     messageforuser += "\n"
-                    messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | " + todaydata["lessons"][i]["subject"] + " | " + "2 группы: " +  todaydata["lessons"][i+1]["auditory"] + ", " + todaydata["lessons"][i]["auditory"] + "каб."
+                    messageforuser += lessonsTime[tommorowdata["lessons"][i]["number"]-1] + " | " + tommorowdata["lessons"][i]["subject"] + " | " + "2 группы: " +  tommorowdata["lessons"][i+1]["auditory"] + ", " + tommorowdata["lessons"][i]["auditory"] + "каб."
                 else:
                     messageforuser += "\n"
-                    messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | "  + todaydata["lessons"][i]["subject"] + " | " + todaydata["lessons"][i]["auditory"] + "каб."
+                    messageforuser += lessonsTime[tommorowdata["lessons"][i]["number"]-1] + " | "  + tommorowdata["lessons"][i]["subject"] + " | " + tommorowdata["lessons"][i]["auditory"] + "каб."
             else:
                 messageforuser += "\n"
-                messageforuser += lessonsTime[todaydata["lessons"][i]["number"]-1] + " | "  + todaydata["lessons"][i]["subject"] + " | " + todaydata["lessons"][i]["auditory"] + "каб."
+                messageforuser += lessonsTime[tommorowdata["lessons"][i]["number"]-1] + " | "  + tommorowdata["lessons"][i]["subject"] + " | " + tommorowdata["lessons"][i]["auditory"] + "каб."
 
         bot.send_message(call.message.chat.id, messageforuser)
 
