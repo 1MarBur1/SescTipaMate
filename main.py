@@ -94,6 +94,12 @@ def send_today(msg):
 
     bot.send_message(msg.chat.id, formatData(response = responsetoday, date = today.date(), mailing=False))
 
+@bot.message_handler(commands=['tomorrow'])
+def send_tomorrow(msg):
+    responsetomorrow = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={(weekday_ + 1)%7}&group=22")
+
+    bot.send_message(msg.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing=False))
+
 # Функия, отправляющая всем пользователям расписание на завтра 
 def send_messages (date, data_weekday):
     response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={data_weekday}&group=22")
@@ -110,7 +116,14 @@ def send_tommorow_mail():
 
 # Backup
 def backup ():
-    bot.send_message(926132680, str(joinedUsers))
+    ids_list = f"Сейчас в боте {len(joinedUsers)} аккаунтов:\n"
+    ids_list += "```\n"
+    for i in joinedUsers:
+        ids_list += "\n"
+        ids_list += str(i)
+    ids_list += "```"
+
+    bot.send_message(926132680, ids_list, parse_mode="Markdown")
 
 # Обновляем все переменные связаные со временем (иначе у бота всегда будет та дата, которая была при запуске)
 def update_dates ():
