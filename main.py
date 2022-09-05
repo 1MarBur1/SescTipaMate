@@ -70,6 +70,11 @@ def open_admin(msg):
     else:
         bot.send_message(msg.chat.id, "У тебя нет админки =/\nЗа ней обращайся к @xmarburx")
 
+@bot.message_handler(commands=['auditories'])
+def send_auditories(msg):
+    img = open('assets/images/auditories.png', 'rb')
+    bot.send_photo(msg.chat.id, img)
+
 @bot.message_handler(commands=['deactivate'])
 def deactivate_mailing(msg):
     if(msg.chat.id in joinedUsers):
