@@ -12,6 +12,7 @@ from format_data import formatData
 today = datetime.datetime.today() + datetime.timedelta(hours=5)
 weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
 tommorowDate = datetime.datetime.today() + datetime.timedelta(days=1, hours=5)
+defaultrequesturl = "https://lyceum.urfu.ru/?type=11&scheduleType=group&group=22"
 
 joinedUsers = set()
 if (not "testing" in sys.argv):
@@ -80,29 +81,29 @@ def deactivate_mailing(msg):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if call.data == "openToday":
-        responsetoday = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={weekday_}&group=22")
+        responsetoday = requests.get(defaultrequesturl + f"&weekday={weekday_}")
         
         bot.send_message(call.message.chat.id, formatData(response = responsetoday, date = today.date(), mailing = False))
     if call.data == "openTomorrow":
-        responsetomorrow = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={(weekday_ + 1) % 7}&group=22")
+        responsetomorrow = requests.get(defaultrequesturl + f"&weekday={(weekday_ + 1) % 7}")
 
         bot.send_message(call.message.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing = False))
 
 @bot.message_handler(commands=['today'])
 def send_today(msg):
-    responsetoday = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={weekday_}&group=22")
+    responsetoday = requests.get(defaultrequesturl + f"&weekday={weekday_}")
 
     bot.send_message(msg.chat.id, formatData(response = responsetoday, date = today.date(), mailing=False))
 
 @bot.message_handler(commands=['tomorrow'])
 def send_tomorrow(msg):
-    responsetomorrow = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={(weekday_ + 1)%7}&group=22")
+    responsetomorrow = requests.get(defaultrequesturl + f"&weekday={(weekday_ + 1) % 7}")
 
     bot.send_message(msg.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing=False))
 
-# Функия, отправляющая всем пользователям расписание на завтра 
+# Функия, отправляющая всем пользователям расписание на указаную дату 
 def send_messages (date, data_weekday):
-    response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={data_weekday}&group=22")
+    response = requests.get(defaultrequesturl + f"&weekday={data_weekday}")
 
     for i in joinedUsers: 
         bot.send_message(i, formatData(response = response, date = date, mailing=True))

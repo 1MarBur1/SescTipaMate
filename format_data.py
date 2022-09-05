@@ -4,26 +4,33 @@ lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-1
 def formatData(response, date, mailing):
     data = json.loads(response.text)
     mailingText = ""
+    lessons = [[], [], [], [], [], [], []]
+    x = 0
+
     if mailing:
         mailingText = "Я к тебе с рассылкой, "
     
-    messageforuser = "Привет! " + mailingText + str(date)+ " у тебя будет такое расписание: \n"
-    n = 0
+    messageforuser = "Привет! " + mailingText + str(date)+ " у тебя будет такое расписание: \n\n"
+
     if (not len(data["lessons"])):
         messageforuser = "Привет! " + mailingText + str(date)+ " не запланироавно никаких уроков =("
 
     for i in range(len(data["lessons"])):
-        if (i+1<len(data["lessons"])):
-            if (data["lessons"][i-1]["number"] == data["lessons"][i]["number"]):
-                n += 1
-            elif (data["lessons"][i+1]["number"] == data["lessons"][i]["number"]):
-                messageforuser += "\n"
-                messageforuser += lessonsTime[data["lessons"][i]["number"]-1] + " | " + data["lessons"][i]["subject"] + " | " + "2 группы: " +  data["lessons"][i+1]["auditory"] + ", " + data["lessons"][i]["auditory"] + "каб."
-            else:
-                messageforuser += "\n"
-                messageforuser += lessonsTime[data["lessons"][i]["number"]-1] + " | "  + data["lessons"][i]["subject"] + " | " + data["lessons"][i]["auditory"] + "каб."
+        lessons_ = data["lessons"]
+        lessons[lessons_[i]["number"]-1].append(lessons_[i])
+    
+    for i in lessons:
+        messageforuser += lessonsTime[x] + " | " 
+        if len(i):
+            messageforuser += i[0]["subject"] + " | "
+            for j in i:
+                messageforuser += j["auditory"] 
+                if (j != i[-1]):
+                    messageforuser += ","
+            messageforuser += "каб.\n"
         else:
-            messageforuser += "\n"
-            messageforuser += lessonsTime[data["lessons"][i]["number"]-1] + " | "  + data["lessons"][i]["subject"] + " | " + data["lessons"][i]["auditory"] + "каб."
-        
+            messageforuser += "<---нет--->\n"
+        x+=1
+
+
     return messageforuser
