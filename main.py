@@ -12,13 +12,18 @@ from format_data import formatData
 today = datetime.datetime.today() + datetime.timedelta(hours=5)
 weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
 tommorowDate = datetime.datetime.today() + datetime.timedelta(days=1, hours=5)
-defaultrequesturl = "https://lyceum.urfu.ru/?type=11&scheduleType=group&group=22"
+defaultrequesturl = "https://lyceum.urfu.ru/?type=11&scheduleType=group"
 
-joinedUsers = set()
+classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е", "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
+
+# user = [user_id, group_id, mailing] - модель пользователя
+
+joinedUsers = []
 if (not "testing" in sys.argv):
     joinedFile = open("./ids.txt", "r")
     for line in joinedFile:
-        joinedUsers.add(int(line.strip()))
+        user_id, group, mailing = line.strip().split(",")
+        joinedUsers.append([int(user_id), int(group), bool(mailing)])
     joinedFile.close()
 
 admins = [926132680, 1145867325, 5027348167]
@@ -36,14 +41,32 @@ defaultButtons.add(button1)
 defaultButtons.add(button2)
 defaultButtons.add(button_dnevnik)
 
+def usersHaveUser (user):
+    have = False
+    for i in joinedUsers:
+        if (i[0] == user):
+            have = True
+            break
+    return have
+
+def getUserId (user):
+    id = -1
+
+    for i in range(len(joinedUsers)):
+        if (joinedUsers[i][0] == user):
+            id = i
+            break
+
+    return id
+
 @bot.message_handler(commands=['help'])
 def help(msg):
     bot.send_message(msg.chat.id, "/start - добавляет тебя в рассылку\n/menu - открывает меню, оттуда можно посмотреть расписание на сегодня, завтра, открыть полезные ресуры и т.д.\n/today - отправляет расписание на сегодня\n/admin - только для администраторов\n/deactivate - удаляет тебя из рассылки")
 
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
-    if not (msg.chat.id in joinedUsers):
-        joinedUsers.add(msg.chat.id)
+    if not usersHaveUser(msg.chat.id):
+        joinedUsers.append([msg.chat.id, 0, True])
        
         bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)")
     else: 
@@ -62,7 +85,7 @@ def open_admin(msg):
     ids_list += "```\n"
     for i in joinedUsers:
         ids_list += "\n"
-        ids_list += str(i)
+        ids_list += str(i).replace("[", "").replace("]", "").replace(" ", "")
     ids_list += "```"
 
     if (msg.chat.id in admins):
@@ -75,43 +98,86 @@ def send_auditories(msg):
     img = open('assets/images/audiences.png', 'rb')
     bot.send_photo(msg.chat.id, img)
 
+@bot.message_handler(commands=['class'])
+def send_settings(msg):
+    if usersHaveUser(msg.chat.id):
+        bot.send_message(msg.chat.id, "Чтобы настроить свой класс просто введи его ниже в фромате '12Я' (если у вас уже был установлен класс он изменится на новый)")
+
+        def get_settings(msg):
+            if msg.text.upper() in classes:
+                bot.send_message(msg.chat.id, f"Окей, твой класс {msg.text.upper()}, я присвоил его тебе! Теперь ты можешь смотреть расписание")
+
+                joinedUsers[getUserId(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
+                print(joinedUsers[getUserId(msg.chat.id)])
+            else:
+                bot.send_message(msg.chat.id, "Я не знаю такого класса, попробуй еще раз /class")
+        bot.register_next_step_handler(msg, get_settings)
+
+    else:
+        bot.send_message(msg.chat.id, "Для настройки тебе нужно зарегистрироваться с помощью /start")
+
 @bot.message_handler(commands=['deactivate'])
 def deactivate_mailing(msg):
-    if(msg.chat.id in joinedUsers):
-        joinedUsers.remove(msg.chat.id)
+    if(usersHaveUser(msg.chat.id)):
+        joinedUsers[getUserId(msg.chat.id)][2] = False
         bot.send_message(msg.chat.id, "Я удалил тебя, больше не буду присылать тебе сообщения автоматически. Но ты все так же можешь смотреть расписание с помощью /menu")
     else:
         bot.send_message(msg.chat.id, "Ты не подписан на рассылку, поэтому я не могу тебя удалить из нее =)")
+@bot.message_handler(commands=['activate'])
+def activate_mailing(msg):
+    if(usersHaveUser(msg.chat.id) and not joinedUsers[getUserId(msg.chat.id)][2]):
+        joinedUsers[getUserId(msg.chat.id)][2] = True
+        bot.send_message(msg.chat.id, "Я добавил тебя, теперь буду присылать тебе сообщения автоматически.")
+    else:
+        bot.send_message(msg.chat.id, "Ты уже подписан на рассылку, поэтому я не могу добавить тебя в нее =)")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
-    if call.data == "openToday":
-        responsetoday = requests.get(defaultrequesturl + f"&weekday={weekday_}")
-        
-        bot.send_message(call.message.chat.id, formatData(response = responsetoday, date = today.date(), mailing = False))
-    if call.data == "openTomorrow":
-        responsetomorrow = requests.get(defaultrequesturl + f"&weekday={(weekday_ + 1) % 7}")
+    if usersHaveUser(call.message.chat.id):
+        if joinedUsers[getUserId(call.message.chat.id)][1] != 0:
+            if call.data == "openToday":
+                responsetoday = requests.get(defaultrequesturl + f"&weekday={weekday_}&group={joinedUsers[getUserId(call.message.chat.id)][1]}")
+                
+                bot.send_message(call.message.chat.id, formatData(response = responsetoday, date = today.date(), mailing = False))
+            if call.data == "openTomorrow":
+                responsetomorrow = requests.get(defaultrequesturl + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[getUserId(call.message.chat.id)][1]}")
 
-        bot.send_message(call.message.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing = False))
+                bot.send_message(call.message.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing = False))
+        else:
+            bot.send_message(call.message.chat.id, "Сначала выбери свой класс, с помощью /class")
+    else:
+        bot.send_message(call.message.chat.id, "Чтобы получить расписание нужно зарегистрироваться с помощью /start")
 
 @bot.message_handler(commands=['today'])
 def send_today(msg):
-    responsetoday = requests.get(defaultrequesturl + f"&weekday={weekday_}")
+    if usersHaveUser(msg.chat.id):
+        if joinedUsers[getUserId(msg.chat.id)][1] != 0:
+            responsetoday = requests.get(defaultrequesturl + f"&weekday={weekday_}&group={joinedUsers[getUserId(msg.chat.id)][1]}")
 
-    bot.send_message(msg.chat.id, formatData(response = responsetoday, date = today.date(), mailing=False))
+            bot.send_message(msg.chat.id, formatData(response = responsetoday, date = today.date(), mailing=False))
+        else:
+            bot.send_message(msg.chat.id, "Сначала выбери свой класс, с помощью /class")
+    else:
+        bot.send_message(msg.chat.id, "Чтобы получить расписание нужно зарегистрироваться с помощью /start")
 
 @bot.message_handler(commands=['tomorrow'])
 def send_tomorrow(msg):
-    responsetomorrow = requests.get(defaultrequesturl + f"&weekday={(weekday_ + 1) % 7}")
+    if usersHaveUser(msg.chat.id):
+        if joinedUsers[getUserId(msg.chat.id)][1] != 0:
+            responsetomorrow = requests.get(defaultrequesturl + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[getUserId(msg.chat.id)][1]}")
 
-    bot.send_message(msg.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing=False))
+            bot.send_message(msg.chat.id, formatData(response = responsetomorrow, date = tommorowDate.date(), mailing=False))
+        else:
+            bot.send_message(msg.chat.id, "Сначала выбери свой класс, с помощью /class")
+    else:
+        bot.send_message(msg.chat.id, "Чтобы получить расписание нужно зарегистрироваться с помощью /start")
 
 # Функия, отправляющая всем пользователям расписание на указаную дату 
 def send_messages (date, data_weekday):
-    response = requests.get(defaultrequesturl + f"&weekday={data_weekday}")
-
     for i in joinedUsers: 
-        bot.send_message(i, formatData(response = response, date = date, mailing=True))
+        response = requests.get(defaultrequesturl + f"&weekday={data_weekday}&group={i[1]}")
+        if i[2]:
+            bot.send_message(i[0], formatData(response = response, date = date, mailing=True))
 
 
 def send_today_mail():
