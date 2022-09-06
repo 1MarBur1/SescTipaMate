@@ -22,6 +22,8 @@ def formatData(response, date, mailing):
     for i in lessons:
         messageforuser += lessonsTime[x] + " | " 
         if len(i):
+            if (i[0]["subject"] == "Русский"):
+                i[0]["subject"] = "РускЯзык"
             messageforuser += i[0]["subject"] + " | "
             for j in i:
                 messageforuser += j["auditory"] 
