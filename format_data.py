@@ -19,20 +19,21 @@ def formatData(response, date, mailing):
         lessons_ = data["lessons"]
         lessons[lessons_[i]["number"]-1].append(lessons_[i])
     
-    for i in lessons:
-        messageforuser += lessonsTime[x] + " | " 
-        if len(i):
-            if (i[0]["subject"] == "Русский"):
-                i[0]["subject"] = "РускЯзык"
-            messageforuser += i[0]["subject"] + " | "
-            for j in i:
-                messageforuser += j["auditory"] 
-                if (j != i[-1]):
-                    messageforuser += ","
-            messageforuser += "каб.\n"
-        else:
-            messageforuser += "<---нет--->\n"
-        x+=1
+    if (len(data["lessons"])):
+        for i in lessons:
+            messageforuser += lessonsTime[x] + " | " 
+            if len(i):
+                if (i[0]["subject"] == "Русский"):
+                    i[0]["subject"] = "РускЯзык"
+                messageforuser += i[0]["subject"] + " | "
+                for j in i:
+                    messageforuser += j["auditory"] 
+                    if (j != i[-1]):
+                        messageforuser += ","
+                messageforuser += "каб.\n"
+            else:
+                messageforuser += "<---нет--->\n"
+            x+=1
 
 
     return messageforuser
