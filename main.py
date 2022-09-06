@@ -192,7 +192,7 @@ def backup ():
     ids_list += "```\n"
     for i in joinedUsers:
         ids_list += "\n"
-        ids_list += str(i)
+        ids_list += str(i).replace("[", "").replace("]", "").replace(" ", "")
     ids_list += "```"
 
     bot.send_message(926132680, ids_list, parse_mode="Markdown")
@@ -205,7 +205,7 @@ def update_dates ():
 
     today = datetime.datetime.today() + datetime.timedelta(hours=5)
     weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
-    tommorowDate = datetime.datetime.now() + datetime.timedelta(days=1)
+    tommorowDate = datetime.datetime.now() + datetime.timedelta(days=1, hours=5)
 
 # Здесь устанавливаем всякие таймера на апдейт переменных раз в день, время рассылок и т.д.
 def do_schedule ():
