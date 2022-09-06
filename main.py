@@ -61,7 +61,7 @@ def getUserId (user):
 
 @bot.message_handler(commands=['help'])
 def help(msg):
-    bot.send_message(msg.chat.id, "/start - добавляет тебя в рассылку\n/menu - открывает меню, оттуда можно посмотреть расписание на сегодня, завтра, открыть полезные ресуры и т.д.\n/today - отправляет расписание на сегодня\n/admin - только для администраторов\n/deactivate - удаляет тебя из рассылки")
+    bot.send_message(msg.chat.id, "/start - регистрирует тебя в боте\n/menu - открывает меню, оттуда можно посмотреть расписание на сегодня, завтра, открыть полезные ресуры и т.д.\n/today - отправляет расписание на сегодня\n/tomorrow - отправляет расписание на завтра\n/admin - только для администраторов\n/deactivate - удаляет тебя из рассылки\n/activate - добавляет тебя в рассылку\n/class - выбрать свой класс\n/audiences - список, где находятся аудитории")
 
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
