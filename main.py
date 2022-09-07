@@ -17,16 +17,26 @@ defaultrequesturl = "https://lyceum.urfu.ru/?type=11&scheduleType=group"
 classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е", "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
 # user = [user_id, group_id, mailing] - модель пользователя
-
+groups = []
 joinedUsers = []
+
+def getGroups ():
+    global groups
+
+    for i in joinedUsers:
+        if i[1] and not i[1] in groups:
+            groups.append(i[1])
+
+
 if (not "testing" in sys.argv):
     joinedFile = open("./ids.txt", "r")
     for line in joinedFile:
         user_id, group, mailing = line.strip().split(",")
         joinedUsers.append([int(user_id), int(group), bool(mailing)])
     joinedFile.close()
+    getGroups()
 
-admins = [926132680, 1145867325, 5027348167]
+admins = [926132680]
 
 if ("testing" in sys.argv):
     bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
@@ -69,10 +79,11 @@ def send_welcome(msg):
         joinedUsers.append([msg.chat.id, 0, True])
        
         bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)")
+        getGroups()
     else: 
-        messageforlogineduser = "Друг, ты уже есть в моих списках, не переживай, я тебя оповещу!"
+        messageforlogineduser = "Друг, ты уже зарегестрирован и можешь пользоваться ботом!"
         if (msg.chat.id < 0):
-            messageforlogineduser = "Эта группа уже добавлена! Если ты хочешь добавить себя это нужно сделать в личных сообщениях"
+            messageforlogineduser = "Эта группа уже зарегестрирована! Если ты хочешь добавить себя это нужно сделать в личных сообщениях"
         bot.send_message(msg.chat.id, messageforlogineduser)
 
 @bot.message_handler(commands=['menu'])
@@ -108,11 +119,10 @@ def send_settings(msg):
                 bot.send_message(msg.chat.id, f"Окей, твой класс {msg.text.upper()}, я присвоил его тебе! Теперь ты можешь смотреть расписание")
 
                 joinedUsers[getUserId(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
-                print(joinedUsers[getUserId(msg.chat.id)])
+                getGroups()
             else:
                 bot.send_message(msg.chat.id, "Я не знаю такого класса, попробуй еще раз /class")
         bot.register_next_step_handler(msg, get_settings)
-
     else:
         bot.send_message(msg.chat.id, "Для настройки тебе нужно зарегистрироваться с помощью /start")
 
@@ -174,9 +184,15 @@ def send_tomorrow(msg):
 
 # Функия, отправляющая всем пользователям расписание на указаную дату 
 def send_messages (date, data_weekday):
+    responses = [None] * len(classes)
+    for group in groups:
+        responses[group-1] = requests.get(defaultrequesturl + f"&weekday={data_weekday}&group={group}")
+        time.sleep(1)
+
     for i in joinedUsers: 
-        response = requests.get(defaultrequesturl + f"&weekday={data_weekday}&group={i[1]}")
-        if i[2]:
+        response = responses[i[1]-1]
+
+        if i[1] and i[2]:
             bot.send_message(i[0], formatData(response = response, date = date, mailing=True))
 
 
