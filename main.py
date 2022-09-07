@@ -229,7 +229,7 @@ def do_schedule ():
     schedule.every().days.at("19:00").do(update_dates)
 
     if weekday_ != 6:
-        schedule.every().days.at("13:00").do(send_tommorow_mail)
+        schedule.every().days.at("13:07").do(send_tommorow_mail)
     if weekday_ != 7:
         schedule.every().days.at("02:00").do(send_today_mail)
     while True:
