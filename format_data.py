@@ -30,6 +30,7 @@ def formatData(response, date, mailing):
                     messageforuser += j["auditory"] 
                     if (j != i[-1]):
                         messageforuser += ","
+            if i[0]["subject"] != "СпЗал":
                 messageforuser += "каб.\n"
             else:
                 messageforuser += "<---нет--->\n"
