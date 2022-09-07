@@ -8,7 +8,7 @@ def formatData(response, date, mailing):
     x = 0
 
     if mailing:
-        mailingText = "Я к тебе с рассылкой, "
+        mailingText = "Я к тебе с рассылкой, чтобы ее отключить напиши /deactivate "
     
     messageforuser = "Привет! " + mailingText + str(date)+ " у тебя будет такое расписание: \n\n"
 

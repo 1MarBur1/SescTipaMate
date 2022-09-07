@@ -78,7 +78,7 @@ def send_welcome(msg):
     if not usersHaveUser(msg.chat.id):
         joinedUsers.append([msg.chat.id, 0, True])
        
-        bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =)")
+        bot.send_message(msg.chat.id, f"Привет, {msg.from_user.first_name}! Ты являешься учеником СУНЦ УрФУ! Нужно всегда быть в курсе расписания, теперь я буду помогать с этим =) Но сначала напиши свой класс с помощью /class")
         getGroups()
     else: 
         messageforlogineduser = "Друг, ты уже зарегестрирован и можешь пользоваться ботом!"
