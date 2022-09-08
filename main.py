@@ -89,7 +89,8 @@ def send_welcome(msg):
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
         get_groups()
     else:
-        message_for_registered_user = dialog.message("registered_group" if msg.chat.id < 0 else "registered_user")
+        message_for_registered_user = \
+            dialog.message("group_already_registered" if msg.chat.id < 0 else "user_already_registered")
         bot.send_message(msg.chat.id, message_for_registered_user)
 
 
@@ -132,12 +133,12 @@ def send_settings(msg):
 
         def get_settings(msg):
             if msg.text.upper() in classes:
-                bot.send_message(msg.chat.id, dialog.message("class_selected", classId=msg.text.upper()))
+                bot.send_message(msg.chat.id, dialog.message("group_selected", classId=msg.text.upper()))
 
                 joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
                 get_groups()
             else:
-                bot.send_message(msg.chat.id, dialog.message("unknown_class"))
+                bot.send_message(msg.chat.id, dialog.message("unknown_group"))
 
         bot.register_next_step_handler(msg, get_settings)
     else:
@@ -173,7 +174,7 @@ def callback_inline(call):
                 response_tomorrow = requests.get(default_request_url + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
                 bot.send_message(call.message.chat.id, format_data(response=response_tomorrow, date=tomorrowDate.date(), mailing=False, dialog=dialog))
         else:
-            bot.send_message(call.message.chat.id, dialog.message("unselected_class"))
+            bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
     else:
         bot.send_message(call.message.chat.id, dialog.message("unregistered_user"))
 
@@ -185,7 +186,7 @@ def send_today(msg):
             response_today = requests.get(default_request_url + f"&weekday={weekday_}&group={joinedUsers[get_user_id(msg.chat.id)][1]}")
             bot.send_message(msg.chat.id, format_data(response=response_today, date=today.date(), mailing=False, dialog=dialog))
         else:
-            bot.send_message(msg.chat.id, dialog.message("unselected_class"))
+            bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:
         bot.send_message(msg.chat.id, dialog.message("unregistered_user"))
 
@@ -197,7 +198,7 @@ def send_tomorrow(msg):
             response_tomorrow = requests.get(default_request_url + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[get_user_id(msg.chat.id)][1]}")
             bot.send_message(msg.chat.id, format_data(response=response_tomorrow, date=tomorrowDate.date(), mailing=False, dialog=dialog))
         else:
-            bot.send_message(msg.chat.id, dialog.message("unselected_class"))
+            bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:
         bot.send_message(msg.chat.id, dialog.message("unregistered_user"))
 
@@ -241,7 +242,7 @@ def do_schedule():
     schedule.every().days.at("19:00").do(update_dates)
 
     if weekday_ != 6:
-        schedule.every().days.at("19:35").do(send_tomorrow_mail)
+        schedule.every().days.at("14:15").do(send_tomorrow_mail)
     if weekday_ != 7:
         schedule.every().days.at("02:00").do(send_today_mail)
     while True:
