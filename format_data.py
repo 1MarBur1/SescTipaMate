@@ -21,6 +21,10 @@ def format_data(response, date, mailing, dialog):
         lessons_ = data["lessons"]
         lessons[lessons_[i]["number"] - 1].append(lessons_[i])
 
+    for i in range(len(data["diffs"])):
+        diffs_ = data["diffs"]
+        lessons[diffs_[i]["number"] - 1].append(diffs_[i])
+
     if len(data["lessons"]):
         for i in lessons:
             message_for_user += lessonsTime[x] + " | "
