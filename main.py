@@ -215,11 +215,13 @@ def send_messages(date, data_weekday):
 
 
 def send_today_mail():
-    send_messages(date=today.date(), data_weekday=weekday_)
+    if weekday_ != 7:
+        send_messages(date=today.date(), data_weekday=weekday_)
 
 
 def send_tomorrow_mail():
-    send_messages(date=tomorrowDate.date(), data_weekday=(weekday_ + 1) % 7)
+    if weekday_ != 6:
+        send_messages(date=tomorrowDate.date(), data_weekday=(weekday_ + 1) % 7)
 
 
 # Backup
@@ -240,11 +242,8 @@ def update_dates():
 def do_schedule():
     schedule.every().hour.do(backup)
     schedule.every().days.at("19:00").do(update_dates)
-
-    if weekday_ != 6:
-        schedule.every().days.at("14:15").do(send_tomorrow_mail)
-    if weekday_ != 7:
-        schedule.every().days.at("02:00").do(send_today_mail)
+    schedule.every().days.at("14:15").do(send_tomorrow_mail)
+    schedule.every().days.at("02:00").do(send_today_mail)
     while True:
         schedule.run_pending()
         time.sleep(1)
