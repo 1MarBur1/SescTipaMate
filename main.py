@@ -32,7 +32,7 @@ def getGroups ():
 joinedFile = open("./ids.txt", "r")
 for line in joinedFile:
     user_id, group, mailing = line.strip().split(",")
-    joinedUsers.append([int(user_id), int(group), bool(mailing)])
+    joinedUsers.append([int(user_id), int(group), mailing == "True"])
 joinedFile.close()
 getGroups()
 
