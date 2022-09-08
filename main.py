@@ -41,7 +41,7 @@ for line in joinedFile:
 joinedFile.close()
 get_groups()
 
-admins = [926132680]
+admins = [926132680, 423052299]
 
 if "testing" in sys.argv:
     bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
