@@ -23,7 +23,8 @@ def format_data(response, date, mailing, dialog):
 
     for i in range(len(data["diffs"])):
         diffs_ = data["diffs"]
-        lessons[diffs_[i]["number"] - 1].append(diffs_[i])
+        if diffs_[i]["subject"] != "Нет":
+            lessons[diffs_[i]["number"] - 1].append(diffs_[i])
 
     if len(data["lessons"]):
         for i in lessons:
