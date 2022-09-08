@@ -28,13 +28,13 @@ def getGroups ():
             groups.append(i[1])
 
 
-if (not "testing" in sys.argv):
-    joinedFile = open("./ids.txt", "r")
-    for line in joinedFile:
-        user_id, group, mailing = line.strip().split(",")
-        joinedUsers.append([int(user_id), int(group), bool(mailing)])
-    joinedFile.close()
-    getGroups()
+# if (not "testing" in sys.argv):
+joinedFile = open("./ids.txt", "r")
+for line in joinedFile:
+    user_id, group, mailing = line.strip().split(",")
+    joinedUsers.append([int(user_id), int(group), bool(mailing)])
+joinedFile.close()
+getGroups()
 
 admins = [926132680]
 
@@ -187,8 +187,7 @@ def send_messages (date, data_weekday):
     responses = [None] * len(classes)
     for group in groups:
         responses[group-1] = requests.get(defaultrequesturl + f"&weekday={data_weekday}&group={group}")
-        time.sleep(1)
-
+    
     for i in joinedUsers: 
         response = responses[i[1]-1]
 
@@ -229,7 +228,7 @@ def do_schedule ():
     schedule.every().days.at("19:00").do(update_dates)
 
     if weekday_ != 6:
-        schedule.every().days.at("13:07").do(send_tommorow_mail)
+        schedule.every().days.at("19:35").do(send_tommorow_mail)
     if weekday_ != 7:
         schedule.every().days.at("02:00").do(send_today_mail)
     while True:
