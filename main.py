@@ -133,7 +133,7 @@ def send_settings(msg):
 
         def get_settings(msg):
             if msg.text.upper() in classes:
-                bot.send_message(msg.chat.id, dialog.message("group_selected", classId=msg.text.upper()))
+                bot.send_message(msg.chat.id, dialog.message("group_selected", group=msg.text.upper()))
 
                 joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
                 get_groups()
