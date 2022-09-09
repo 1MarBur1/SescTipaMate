@@ -222,6 +222,7 @@ def send_messages(date, data_weekday):
         if i[1] and i[2]:
             message_ = bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
             if i[3]:
+                bot.unpin_all_chat_messages(i[0])
                 bot.pin_chat_message(i[0], message_.message_id)
 
 
