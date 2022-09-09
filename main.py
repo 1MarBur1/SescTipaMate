@@ -86,7 +86,6 @@ def help_message(msg):
 def send_welcome(msg):
     if not users_have_user(msg.chat.id):
         joinedUsers.append([msg.chat.id, 0, True, False])
-
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
         get_groups()
     else:
@@ -116,7 +115,7 @@ def get_ids_list():
 def open_admin(msg):
     ids_list = get_ids_list()
     if msg.chat.id in admins:
-        bot.send_message(msg.chat.id, ids_list, parse_mode="Markdown")
+        bot.send_message(msg.chat.id, ids_list, parse_mode="markdown")
     else:
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"))
 
@@ -135,7 +134,6 @@ def send_settings(msg):
         def get_settings(msg):
             if msg.text.upper() in classes:
                 bot.send_message(msg.chat.id, dialog.message("group_selected", group=msg.text.upper()))
-
                 joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
                 get_groups()
             else:

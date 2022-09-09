@@ -1,5 +1,6 @@
 import requests
 import json
+from collections import defaultdict
 
 lessons_time = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
@@ -8,11 +9,19 @@ groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "
 
 class ScheduleProvider:
     def __init__(self):
-        self.__schedule = {"teachers": {}, "audiences": {}, "groups": {}}
+        self.__schedule = {
+            "teachers": defaultdict(lambda: []),
+            "audiences": defaultdict(lambda: []),
+            "groups": defaultdict(lambda: [])
+        }
 
     def fetch_schedule(self, day):
         # TODO: check schedule diffs
-        self.__schedule = {"teachers": {}, "audiences": {}, "groups": {}}
+        self.__schedule = {
+            "teachers": defaultdict(lambda: []),
+            "audiences": defaultdict(lambda: []),
+            "groups": defaultdict(lambda: [])
+        }
 
         for group in range(1, len(groups) + 1):
             response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day}&group={group}")
@@ -23,27 +32,18 @@ class ScheduleProvider:
                 aud = les.pop("auditory")
                 lesson = {**les, "audience": aud}
 
-                teacher = lesson["teacher"]
-                if teacher not in self.__schedule["teachers"]:
-                    self.__schedule["teachers"][teacher] = []
-                self.__schedule["teachers"][teacher].append(lesson)
-
-                if aud not in self.__schedule["audiences"]:
-                    self.__schedule["audiences"][aud] = []
+                self.__schedule["teachers"][les["teacher"]].append(lesson)
                 self.__schedule["audiences"][aud].append(lesson)
-
-                if group not in self.__schedule["groups"]:
-                    self.__schedule["groups"][group] = []
                 self.__schedule["groups"][group].append(lesson)
 
     def for_group(self, group):
-        return self.__schedule["groups"].get(group, [])
+        return self.__schedule["groups"][group]
 
     def for_audience(self, audience):
-        return self.__schedule["audiences"].get(audience, [])
+        return self.__schedule["audiences"][audience]
 
     def for_teacher(self, teacher):
-        return self.__schedule["teachers"].get(teacher, [])
+        return self.__schedule["teachers"][teacher]
 
 
 def format_schedule(schedule):
