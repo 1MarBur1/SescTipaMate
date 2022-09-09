@@ -9,9 +9,9 @@ from threading import Thread
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
-env = os.getenv('token')
-print(env)
+if not "testing" in sys.argv:
+    load_dotenv()
+    auth_token = os.getenv('token')
 
 from dialog import Dialog
 from format_data import format_data
@@ -54,7 +54,7 @@ admins = [926132680, 423052299]
 if "testing" in sys.argv:
     bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
 else:
-    bot = telebot.TeleBot("5435533576:AAERV3w9cDsGraZ8DiTCjG2AMjva8vD9Wo8")
+    bot = telebot.TeleBot(auth_token)
 
 defaultButtons = types.InlineKeyboardMarkup()
 button1 = types.InlineKeyboardButton(dialog.message("menu_today"), callback_data="openToday")
