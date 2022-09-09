@@ -126,7 +126,10 @@ def announcement(msg):
     if msg.chat.id in admins:
         for i in joinedUsers:
             if i[5]:
-                bot.send_message(i[0], extract_arg(msg.text))
+                try:
+                    bot.send_message(i[0], extract_arg(msg.text))
+                except:
+                    pass
     else:
         bot.send_message(msg.chat.id, dialog("you_are_not_admin"), parse_mode="Markdown")
 
@@ -240,13 +243,16 @@ def send_messages(date, data_weekday):
     for i in joinedUsers:
         response = responses[i[1] - 1]
         if i[1] and i[2]:
-            message_ = bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
-            if i[3]:
-                if i[4] != -1:
-                    bot.unpin_chat_message(i[0], i[4])
-                
-                bot.pin_chat_message(i[0], message_.message_id)
-                i[4] = message_.message_id
+            try:
+                message_ = bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
+                if i[3]:
+                    if i[4] != -1:
+                        bot.unpin_chat_message(i[0], i[4])
+                    
+                    bot.pin_chat_message(i[0], message_.message_id)
+                    i[4] = message_.message_id
+            except:
+                pass
 
 
 def send_today_mail():
