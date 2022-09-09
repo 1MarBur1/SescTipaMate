@@ -6,6 +6,12 @@ import datetime
 import requests
 import sys
 from threading import Thread
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+env = os.getenv('GCP_PROJECT_ID')
+print(env)
 
 from dialog import Dialog
 from format_data import format_data
