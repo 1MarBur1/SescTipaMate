@@ -6,9 +6,14 @@ import datetime
 import requests
 import sys
 from threading import Thread
+from boto.s3.connection import S3Connection
+import os
 
 from dialog import Dialog
 from format_data import format_data
+
+s3 = S3Connection(os.environ['token'])
+print(s3)
 
 dialog = Dialog("ru")
 
@@ -283,7 +288,7 @@ def update_dates():
 def do_schedule():
     schedule.every().hour.do(backup)
     schedule.every().days.at("19:00").do(update_dates)
-    schedule.every().days.at("13:10").do(send_tomorrow_mail)
+    schedule.every().days.at("13:00").do(send_tomorrow_mail)
     schedule.every().days.at("02:00").do(send_today_mail)
     while True:
         schedule.run_pending()
