@@ -256,7 +256,7 @@ def update_dates():
 def do_schedule():
     schedule.every().hour.do(backup)
     schedule.every().days.at("19:00").do(update_dates)
-    schedule.every().days.at("14:15").do(send_tomorrow_mail)
+    schedule.every().days.at("13:10").do(send_tomorrow_mail)
     schedule.every().days.at("02:00").do(send_today_mail)
     while True:
         schedule.run_pending()
