@@ -20,7 +20,7 @@ default_request_url = "https://lyceum.urfu.ru/?type=11&scheduleType=group"
 classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
            "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
-# user = [user_id, group_id, mailing] - модель пользователя
+# user = [user_id, group_id, mailing, pinning] - модель пользователя
 groups = []
 joinedUsers = []
 
@@ -36,8 +36,8 @@ def get_groups():
 # if (not "testing" in sys.argv):
 joinedFile = open("./ids.txt", "r")
 for line in joinedFile:
-    user_id, group, mailing = line.strip().split(",")
-    joinedUsers.append([int(user_id), int(group), mailing == "True"])
+    user_id, group, mailing, pinning = line.strip().split(",")
+    joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True"])
 joinedFile.close()
 get_groups()
 
@@ -84,7 +84,7 @@ def help_message(msg):
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
     if not users_have_user(msg.chat.id):
-        joinedUsers.append([msg.chat.id, 0, True])
+        joinedUsers.append([msg.chat.id, 0, True, False])
 
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
         get_groups()
@@ -139,10 +139,19 @@ def send_settings(msg):
                 get_groups()
             else:
                 bot.send_message(msg.chat.id, dialog.message("unknown_group"))
-
         bot.register_next_step_handler(msg, get_settings)
     else:
         bot.send_message(msg.chat.id, dialog.message("unregistered_user"))
+
+
+@bot.message_handler(commands=['pinning'])
+def toggle_pinning (msg):
+    joinedUsers[get_user_id(msg.chat.id)][3] = not joinedUsers[get_user_id(msg.chat.id)][3]
+    pinned_message = " не"
+    if joinedUsers[get_user_id(msg.chat.id)][3]:
+        pinned_message = ""
+
+    bot.send_message(msg.chat.id, f"Теперь я{pinned_message} буду закреплять рассылки")
 
 
 @bot.message_handler(commands=['deactivate'])
@@ -211,7 +220,9 @@ def send_messages(date, data_weekday):
     for i in joinedUsers:
         response = responses[i[1] - 1]
         if i[1] and i[2]:
-            bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
+            message_ = bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
+            if i[3]:
+                bot.pin_chat_message(i[0], message_.message_id)
 
 
 def send_today_mail():
