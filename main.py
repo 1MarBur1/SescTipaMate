@@ -6,14 +6,9 @@ import datetime
 import requests
 import sys
 from threading import Thread
-from boto.s3.connection import S3Connection
-import os
 
 from dialog import Dialog
 from format_data import format_data
-
-s3 = S3Connection(os.environ['token'])
-print(s3)
 
 dialog = Dialog("ru")
 
