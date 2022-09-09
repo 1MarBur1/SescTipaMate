@@ -20,7 +20,7 @@ default_request_url = "https://lyceum.urfu.ru/?type=11&scheduleType=group"
 classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
            "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
-# user = [user_id, group_id, mailing, pinning] - модель пользователя
+# user = [user_id, group_id, mailing, pinning, pinned_message] - модель пользователя
 groups = []
 joinedUsers = []
 
@@ -36,8 +36,8 @@ def get_groups():
 # if (not "testing" in sys.argv):
 joinedFile = open("./ids.txt", "r")
 for line in joinedFile:
-    user_id, group, mailing, pinning = line.strip().split(",")
-    joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True"])
+    user_id, group, mailing, pinning, pinned_message = line.strip().split(",")
+    joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True", int(pinned_message)])
 joinedFile.close()
 get_groups()
 
@@ -84,13 +84,12 @@ def help_message(msg):
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
     if not users_have_user(msg.chat.id):
-        joinedUsers.append([msg.chat.id, 0, True, False])
+        joinedUsers.append([msg.chat.id, 0, True, False, -1])
 
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
         get_groups()
     else:
-        message_for_registered_user = \
-            dialog.message("group_already_registered" if msg.chat.id < 0 else "user_already_registered")
+        message_for_registered_user = dialog.message("group_already_registered" if msg.chat.id < 0 else "user_already_registered")
         bot.send_message(msg.chat.id, message_for_registered_user)
 
 
@@ -222,8 +221,11 @@ def send_messages(date, data_weekday):
         if i[1] and i[2]:
             message_ = bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
             if i[3]:
-                bot.unpin_all_chat_messages(i[0])
+                if i[4] != -1:
+                    bot.unpin_chat_message(i[0], i[4])
+                
                 bot.pin_chat_message(i[0], message_.message_id)
+                i[4] = message_.message_id
 
 
 def send_today_mail():
