@@ -18,7 +18,7 @@ class ScheduleProvider:
             response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day}&group={group}")
             data = json.loads(response.text)
 
-            for les in data["lessons"]:
+            for les in data["lessons"] + data["diffs"]:
                 del les["uid"], les["weekday"]
                 aud = les.pop("auditory")
                 lesson = {**les, "audience": aud}
@@ -49,12 +49,16 @@ class ScheduleProvider:
 def format_schedule(schedule):
     formatted = [""] * 7
     for lesson in schedule:
-        formatted[lesson["number"] - 1] += \
-            f'    {lesson["subject"]} *[{lesson["audience"]}]* - _{lesson["teacher"]}_\n'
+        entry = f'    {lesson["subject"]}'
+        if lesson["audience"]:
+            entry += f' *[{lesson["audience"]}]*'
+        if lesson["teacher"]:
+            entry += f' - _{lesson["teacher"]}_'
+        formatted[lesson["number"] - 1] += entry + "\n"
     result = ""
     for i in range(7):
         if not formatted[i]:
-            formatted[i] = "    \[нет]\n"
+            formatted[i] = "    \[_нет_]\n"
         result += f"*{lessons_time[i]}*\n"
         result += f"{formatted[i]}"
     return result

@@ -263,7 +263,7 @@ def do_schedule():
 
 
 def main():
-    sp.fetch_schedule(weekday_ + 1)
+    sp.fetch_schedule(weekday_)
 
     thread = Thread(target=do_schedule)
     thread.start()
