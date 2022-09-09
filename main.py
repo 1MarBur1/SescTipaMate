@@ -20,10 +20,12 @@ default_request_url = "https://lyceum.urfu.ru/?type=11&scheduleType=group"
 classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
            "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
-# user = [user_id, group_id, mailing, pinning, pinned_message] - модель пользователя
+# user = [user_id, group_id, mailing, pinning, pinned_message, get_news] - модель пользователя
 groups = []
 joinedUsers = []
 
+def extract_arg(arg):
+    return arg[arg.find(" ")::]
 
 def get_groups():
     global groups
@@ -33,13 +35,13 @@ def get_groups():
             groups.append(i[1])
 
 
-# if (not "testing" in sys.argv):
-joinedFile = open("./ids.txt", "r")
-for line in joinedFile:
-    user_id, group, mailing, pinning, pinned_message = line.strip().split(",")
-    joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True", int(pinned_message)])
-joinedFile.close()
-get_groups()
+if (not "testing" in sys.argv):
+    joinedFile = open("./ids.txt", "r")
+    for line in joinedFile:
+        user_id, group, mailing, pinning, pinned_message, get_news = line.strip().split(",")
+        joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True", int(pinned_message), get_news == "True"])
+    joinedFile.close()
+    get_groups()
 
 admins = [926132680, 423052299]
 
@@ -84,7 +86,7 @@ def help_message(msg):
 @bot.message_handler(commands=['start'])
 def send_welcome(msg):
     if not users_have_user(msg.chat.id):
-        joinedUsers.append([msg.chat.id, 0, True, False, -1])
+        joinedUsers.append([msg.chat.id, 0, True, False, -1, True])
 
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
         get_groups()
@@ -119,70 +121,89 @@ def open_admin(msg):
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"))
 
 
+@bot.message_handler(commands=['announcement'])
+def announcement(msg):
+    if msg.chat.id in admins:
+        for i in joinedUsers:
+            if i[5]:
+                bot.send_message(i[0], extract_arg(msg.text))
+    else:
+        bot.send_message(msg.chat.id, dialog("you_are_not_admin"), parse_mode="Markdown")
+
+
 @bot.message_handler(commands=['audiences'])
 def send_audiences(msg):
     img = open('assets/images/audiences.png', mode='rb')
     bot.send_photo(msg.chat.id, img)
 
 
-@bot.message_handler(commands=['class'])
-def send_settings(msg):
+@bot.message_handler(commands=['settings'])
+def return_settings(msg):
     if users_have_user(msg.chat.id):
-        bot.send_message(msg.chat.id, dialog.message("settings_help"))
-
-        def get_settings(msg):
-            if msg.text.upper() in classes:
-                bot.send_message(msg.chat.id, dialog.message("group_selected", group=msg.text.upper()))
-
-                joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
-                get_groups()
-            else:
-                bot.send_message(msg.chat.id, dialog.message("unknown_group"))
-        bot.register_next_step_handler(msg, get_settings)
+        settings = types.InlineKeyboardMarkup()
+        button1 = types.InlineKeyboardButton(dialog.message("settings_class"), callback_data="settingClass")
+        button2 = types.InlineKeyboardButton(dialog.message("settings_mailing"), callback_data="settingMailing")
+        button3 = types.InlineKeyboardButton(dialog.message("settings_pinning"), callback_data="settingPinning")
+        button4 = types.InlineKeyboardButton(dialog.message("settings_news"), callback_data="settingNews")
+        settings.add(button1)
+        settings.add(button2)
+        settings.add(button3)
+        settings.add(button4)
+        bot.send_message(msg.chat.id, dialog.message("settings_welcome"), reply_markup=settings)
     else:
         bot.send_message(msg.chat.id, dialog.message("unregistered_user"))
-
-
-@bot.message_handler(commands=['pinning'])
-def toggle_pinning (msg):
-    joinedUsers[get_user_id(msg.chat.id)][3] = not joinedUsers[get_user_id(msg.chat.id)][3]
-    pinned_message = " не"
-    if joinedUsers[get_user_id(msg.chat.id)][3]:
-        pinned_message = ""
-
-    bot.send_message(msg.chat.id, f"Теперь я{pinned_message} буду закреплять рассылки")
-
-
-@bot.message_handler(commands=['deactivate'])
-def deactivate_mailing(msg):
-    if users_have_user(msg.chat.id):
-        joinedUsers[get_user_id(msg.chat.id)][2] = False
-        bot.send_message(msg.chat.id, dialog.message("mail_deactivated"))
-    else:
-        bot.send_message(msg.chat.id, dialog.message("mail_already_deactivated"))
-
-
-@bot.message_handler(commands=['activate'])
-def activate_mailing(msg):
-    if users_have_user(msg.chat.id) and not joinedUsers[get_user_id(msg.chat.id)][2]:
-        joinedUsers[get_user_id(msg.chat.id)][2] = True
-        bot.send_message(msg.chat.id, dialog.message("mail_activated"))
-    else:
-        bot.send_message(msg.chat.id, dialog.message("mail_already_activated"))
 
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
     if users_have_user(call.message.chat.id):
-        if joinedUsers[get_user_id(call.message.chat.id)][1] != 0:
-            if call.data == "openToday":
-                response_today = requests.get(default_request_url + f"&weekday={weekday_}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
-                bot.send_message(call.message.chat.id, format_data(response=response_today, date=today.date(), mailing=False, dialog=dialog))
-            if call.data == "openTomorrow":
-                response_tomorrow = requests.get(default_request_url + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
-                bot.send_message(call.message.chat.id, format_data(response=response_tomorrow, date=tomorrowDate.date(), mailing=False, dialog=dialog))
+        if call.data == "settingClass":
+            bot.send_message(call.message.chat.id, dialog.message("settings_help"))
+
+            def get_settings(msg):
+                if msg.text.upper() in classes:
+                    bot.send_message(msg.chat.id, dialog.message("group_selected", group=msg.text.upper()))
+
+                    joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
+                    get_groups()
+                else:
+                    bot.send_message(msg.chat.id, dialog.message("unknown_group"))
+            bot.register_next_step_handler(call.message, get_settings)
+
+        elif call.data == "settingMailing":
+                    joinedUsers[get_user_id(call.message.chat.id)][2] = not joinedUsers[get_user_id(call.message.chat.id)][2]
+                    
+                    if joinedUsers[get_user_id(call.message.chat.id)][2]:
+                        bot.send_message(call.message.chat.id, dialog.message("mail_activated"))
+                    else:
+                        bot.send_message(call.message.chat.id, dialog.message("mail_deactivated"))
+
+        elif call.data == "settingPinning":
+            joinedUsers[get_user_id(call.message.chat.id)][3] = not joinedUsers[get_user_id(call.message.chat.id)][3]
+            pinned_message = " не"
+            if joinedUsers[get_user_id(call.message.chat.id)][3]:
+                pinned_message = ""
+
+            bot.send_message(call.message.chat.id, f"Теперь я{pinned_message} буду закреплять рассылки")
+        
+        elif call.data == "settingNews":
+            joinedUsers[get_user_id(call.message.chat.id)][5] = not joinedUsers[get_user_id(call.message.chat.id)][5]
+            pinned_message = " не"
+            if joinedUsers[get_user_id(call.message.chat.id)][5]:
+                pinned_message = ""
+
+            bot.send_message(call.message.chat.id, f"Теперь я{pinned_message} буду присылать тебе уведомления об обновлениях бота")
+    
         else:
-            bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
+            if joinedUsers[get_user_id(call.message.chat.id)][1] != 0:
+                if call.data == "openToday":
+                    response_today = requests.get(default_request_url + f"&weekday={weekday_}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
+                    bot.send_message(call.message.chat.id, format_data(response=response_today, date=today.date(), mailing=False, dialog=dialog))
+                elif call.data == "openTomorrow":
+                    response_tomorrow = requests.get(default_request_url + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
+                    bot.send_message(call.message.chat.id, format_data(response=response_tomorrow, date=tomorrowDate.date(), mailing=False, dialog=dialog)) 
+            else:
+                bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
     else:
         bot.send_message(call.message.chat.id, dialog.message("unregistered_user"))
 
