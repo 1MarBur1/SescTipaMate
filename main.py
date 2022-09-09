@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import os
 
 load_dotenv()
-env = os.getenv('GCP_PROJECT_ID')
+env = os.getenv('token')
 print(env)
 
 from dialog import Dialog
