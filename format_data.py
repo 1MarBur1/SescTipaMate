@@ -10,7 +10,7 @@ def format_data(response, date, mailing, dialog):
     x = 0
 
     if mailing:
-        mailing_text = dialog.message("mail_delivered")
+        mailing_text = dialog.message("mail_delivered") + " "
 
     message_for_user = "Привет! " + mailing_text + str(date) + " у тебя будет такое расписание: \n\n"
 
