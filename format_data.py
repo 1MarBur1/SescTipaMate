@@ -1,6 +1,63 @@
+import requests
 import json
 
-lessonsTime = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
+lessons_time = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
+groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
+          "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
+
+
+class ScheduleProvider:
+    def __init__(self):
+        self.__schedule = {"teachers": {}, "audiences": {}, "groups": {}}
+
+    def fetch_schedule(self, day):
+        # TODO: check schedule diffs
+        self.__schedule = {"teachers": {}, "audiences": {}, "groups": {}}
+
+        for group in range(1, len(groups) + 1):
+            response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day}&group={group}")
+            data = json.loads(response.text)
+
+            for les in data["lessons"]:
+                del les["uid"], les["weekday"]
+                aud = les.pop("auditory")
+                lesson = {**les, "audience": aud}
+
+                teacher = lesson["teacher"]
+                if teacher not in self.__schedule["teachers"]:
+                    self.__schedule["teachers"][teacher] = []
+                self.__schedule["teachers"][teacher].append(lesson)
+
+                if aud not in self.__schedule["audiences"]:
+                    self.__schedule["audiences"][aud] = []
+                self.__schedule["audiences"][aud].append(lesson)
+
+                if group not in self.__schedule["groups"]:
+                    self.__schedule["groups"][group] = []
+                self.__schedule["groups"][group].append(lesson)
+
+    def for_group(self, group):
+        return self.__schedule["groups"].get(group, [])
+
+    def for_audience(self, audience):
+        return self.__schedule["audiences"].get(audience, [])
+
+    def for_teacher(self, teacher):
+        return self.__schedule["teachers"].get(teacher, [])
+
+
+def format_schedule(schedule):
+    formatted = [""] * 7
+    for lesson in schedule:
+        formatted[lesson["number"] - 1] += \
+            f'    {lesson["subject"]} *[{lesson["audience"]}]* - _{lesson["teacher"]}_\n'
+    result = ""
+    for i in range(7):
+        if not formatted[i]:
+            formatted[i] = "    \[нет]\n"
+        result += f"*{lessons_time[i]}*\n"
+        result += f"{formatted[i]}"
+    return result
 
 
 def format_data(response, date, mailing, dialog):
@@ -28,7 +85,7 @@ def format_data(response, date, mailing, dialog):
 
     if len(data["lessons"]):
         for i in lessons:
-            message_for_user += lessonsTime[x] + " | "
+            message_for_user += lessons_time[x] + " | "
             if len(i):
                 if i[0]["subject"] == "Русский":
                     i[0]["subject"] = "РускЯзык"

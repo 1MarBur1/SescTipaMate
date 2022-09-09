@@ -8,9 +8,10 @@ import sys
 from threading import Thread
 
 from dialog import Dialog
-from format_data import format_data
+from format_data import format_data, ScheduleProvider, format_schedule
 
 dialog = Dialog("ru")
+sp = ScheduleProvider()
 
 today = datetime.datetime.today() + datetime.timedelta(hours=5)
 weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
@@ -145,7 +146,7 @@ def send_settings(msg):
 
 
 @bot.message_handler(commands=['pinning'])
-def toggle_pinning (msg):
+def toggle_pinning(msg):
     joinedUsers[get_user_id(msg.chat.id)][3] = not joinedUsers[get_user_id(msg.chat.id)][3]
     pinned_message = " не"
     if joinedUsers[get_user_id(msg.chat.id)][3]:
@@ -192,8 +193,8 @@ def callback_inline(call):
 def send_today(msg):
     if users_have_user(msg.chat.id):
         if joinedUsers[get_user_id(msg.chat.id)][1] != 0:
-            response_today = requests.get(default_request_url + f"&weekday={weekday_}&group={joinedUsers[get_user_id(msg.chat.id)][1]}")
-            bot.send_message(msg.chat.id, format_data(response=response_today, date=today.date(), mailing=False, dialog=dialog))
+            bot.send_message(msg.chat.id, format_schedule(sp.for_group(joinedUsers[get_user_id(msg.chat.id)][1])),
+                             parse_mode="markdown")
         else:
             bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:
@@ -262,6 +263,8 @@ def do_schedule():
 
 
 def main():
+    sp.fetch_schedule(weekday_ + 1)
+
     thread = Thread(target=do_schedule)
     thread.start()
     bot.polling(non_stop=True)
