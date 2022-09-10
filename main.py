@@ -1,11 +1,9 @@
 import schedule
 import time
-import telebot
-from telebot import types
 import datetime
-import requests
 import sys
 from threading import Thread
+from telebot import types, TeleBot
 from dotenv import load_dotenv
 import os
 
@@ -14,9 +12,10 @@ if not "testing" in sys.argv:
     auth_token = os.getenv('token')
 
 from dialog import Dialog
-from format_data import format_data
+from format_data import ScheduleProvider, format_schedule
 
 dialog = Dialog("ru")
+sp = ScheduleProvider()
 
 today = datetime.datetime.today() + datetime.timedelta(hours=5)
 weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
@@ -52,9 +51,9 @@ if (not "testing" in sys.argv):
 admins = [926132680, 423052299]
 
 if "testing" in sys.argv:
-    bot = telebot.TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
+    bot = TeleBot("5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0")
 else:
-    bot = telebot.TeleBot(auth_token)
+    bot = TeleBot(auth_token)
 
 defaultButtons = types.InlineKeyboardMarkup()
 button1 = types.InlineKeyboardButton(dialog.message("menu_today"), callback_data="openToday")
@@ -122,7 +121,7 @@ def get_ids_list():
 def open_admin(msg):
     ids_list = get_ids_list()
     if msg.chat.id in admins:
-        bot.send_message(msg.chat.id, ids_list, parse_mode="Markdown")
+        bot.send_message(msg.chat.id, ids_list, parse_mode="markdown")
     else:
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"))
 
@@ -181,7 +180,7 @@ def callback_inline(call):
 
         elif call.data == "settingMailing":
                     joinedUsers[get_user_id(call.message.chat.id)][2] = not joinedUsers[get_user_id(call.message.chat.id)][2]
-                    
+
                     if joinedUsers[get_user_id(call.message.chat.id)][2]:
                         bot.send_message(call.message.chat.id, dialog.message("mail_activated"))
                     else:
@@ -194,7 +193,7 @@ def callback_inline(call):
                 pinned_message = ""
 
             bot.send_message(call.message.chat.id, f"Теперь я{pinned_message} буду закреплять рассылки")
-        
+
         elif call.data == "settingNews":
             joinedUsers[get_user_id(call.message.chat.id)][5] = not joinedUsers[get_user_id(call.message.chat.id)][5]
             pinned_message = " не"
@@ -202,15 +201,24 @@ def callback_inline(call):
                 pinned_message = ""
 
             bot.send_message(call.message.chat.id, f"Теперь я{pinned_message} буду присылать тебе уведомления об обновлениях бота")
-    
+
         else:
             if joinedUsers[get_user_id(call.message.chat.id)][1] != 0:
                 if call.data == "openToday":
-                    response_today = requests.get(default_request_url + f"&weekday={weekday_}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
-                    bot.send_message(call.message.chat.id, format_data(response=response_today, date=today.date(), mailing=False, dialog=dialog))
-                elif call.data == "openTomorrow":
-                    response_tomorrow = requests.get(default_request_url + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[get_user_id(call.message.chat.id)][1]}")
-                    bot.send_message(call.message.chat.id, format_data(response=response_tomorrow, date=tomorrowDate.date(), mailing=False, dialog=dialog)) 
+                    bot.send_message(
+                        call.message.chat.id,
+                        format_schedule(sp.for_group(weekday_, joinedUsers[get_user_id(call.message.chat.id)][1]),
+                                        today.date()),
+                        parse_mode="markdown"
+                    )
+                if call.data == "openTomorrow":
+                    bot.send_message(
+                        call.message.chat.id,
+                        format_schedule(
+                            sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(call.message.chat.id)][1]),
+                            tomorrowDate.date()),
+                        parse_mode="markdown"
+                    )
             else:
                 bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
     else:
@@ -221,8 +229,11 @@ def callback_inline(call):
 def send_today(msg):
     if users_have_user(msg.chat.id):
         if joinedUsers[get_user_id(msg.chat.id)][1] != 0:
-            response_today = requests.get(default_request_url + f"&weekday={weekday_}&group={joinedUsers[get_user_id(msg.chat.id)][1]}")
-            bot.send_message(msg.chat.id, format_data(response=response_today, date=today.date(), mailing=False, dialog=dialog))
+            bot.send_message(
+                msg.chat.id,
+                format_schedule(sp.for_group(weekday_, joinedUsers[get_user_id(msg.chat.id)][1]), today.date()),
+                parse_mode="markdown"
+            )
         else:
             bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:
@@ -233,8 +244,11 @@ def send_today(msg):
 def send_tomorrow(msg):
     if users_have_user(msg.chat.id):
         if joinedUsers[get_user_id(msg.chat.id)][1] != 0:
-            response_tomorrow = requests.get(default_request_url + f"&weekday={(weekday_ + 1) % 7}&group={joinedUsers[get_user_id(msg.chat.id)][1]}")
-            bot.send_message(msg.chat.id, format_data(response=response_tomorrow, date=tomorrowDate.date(), mailing=False, dialog=dialog))
+            bot.send_message(
+                msg.chat.id,
+                format_schedule(sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(msg.chat.id)][1]), tomorrowDate.date()),
+                parse_mode="markdown"
+            )
         else:
             bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:
@@ -242,33 +256,33 @@ def send_tomorrow(msg):
 
 
 # Функия, отправляющая всем пользователям расписание на указаную дату
-def send_messages(date, data_weekday):
-    responses = [None] * len(classes)
-    for group in groups:
-        responses[group - 1] = requests.get(default_request_url + f"&weekday={data_weekday}&group={group}")
-    for i in joinedUsers:
-        response = responses[i[1] - 1]
-        if i[1] and i[2]:
+def send_mail(data_weekday, date):
+    for user in [[423052299, 32, True, False]]:
+        if user[1] and user[2]:
+            # FIXME: Handle users who blocked bot
             try:
-                message_ = bot.send_message(i[0], format_data(response=response, date=date, mailing=True, dialog=dialog))
-                if i[3]:
-                    if i[4] != -1:
-                        bot.unpin_chat_message(i[0], i[4])
-                    
-                    bot.pin_chat_message(i[0], message_.message_id)
-                    i[4] = message_.message_id
-            except:
-                pass
+                message = bot.send_message(user[0], format_schedule(sp.for_group(data_weekday, user[1]), date),
+                                           parse_mode="markdown")
+                if user[3]:
+                    if user[4] != -1:
+                        bot.unpin_chat_message(user[0], user[4])
+
+                    bot.pin_chat_message(user[0], message.message_id)
+                    user[4] = message.message_id
+            except Exception:
+                continue
 
 
 def send_today_mail():
+    sp.fetch_schedule(weekday_)
     if weekday_ != 7:
-        send_messages(date=today.date(), data_weekday=weekday_)
+        send_mail(weekday_, today.date())
 
 
 def send_tomorrow_mail():
+    sp.fetch_schedule(weekday_ % 7 + 1)
     if weekday_ != 6:
-        send_messages(date=tomorrowDate.date(), data_weekday=(weekday_ + 1) % 7)
+        send_mail(weekday_ % 7 + 1, tomorrowDate.date())
 
 
 # Backup
@@ -291,12 +305,16 @@ def do_schedule():
     schedule.every().days.at("19:00").do(update_dates)
     schedule.every().days.at("13:00").do(send_tomorrow_mail)
     schedule.every().days.at("02:00").do(send_today_mail)
+
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
 def main():
+    sp.fetch_schedule(weekday_)
+    sp.fetch_schedule(weekday_ + 1)
+
     thread = Thread(target=do_schedule)
     thread.start()
     bot.polling(non_stop=True)
