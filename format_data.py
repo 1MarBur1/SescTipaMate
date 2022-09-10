@@ -59,6 +59,6 @@ def format_schedule(schedule, date):
     for i in range(7):
         if not formatted[i]:
             formatted[i] = "    \[_нет_]\n"
-        result += f"*{lessons_time[i]}*\n"
+        result += f"*{i+1}. {lessons_time[i]}*\n"
         result += f"{formatted[i]}"
     return result

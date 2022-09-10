@@ -71,3 +71,10 @@
 1316205511,29,True,False,-1,True
 1228198308,29,True,False,-1,True
 1092734281,21,True,False,-1,True
+1293550635,18,True,False,-1,True
+1400547903,13,True,False,-1,True
+841669550,13,True,False,-1,True
+1802971182,13,True,False,-1,True
+1027786513,13,True,False,-1,True
+653291514,13,True,False,-1,True
+1338696127,13,True,False,-1,True
