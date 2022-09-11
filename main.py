@@ -20,7 +20,6 @@ sp = ScheduleProvider()
 today = datetime.datetime.today() + datetime.timedelta(hours=5)
 weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
 tomorrowDate = datetime.datetime.today() + datetime.timedelta(days=1, hours=5)
-default_request_url = "https://lyceum.urfu.ru/?type=11&scheduleType=group"
 
 classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
            "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
