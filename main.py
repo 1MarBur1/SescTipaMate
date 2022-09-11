@@ -260,7 +260,7 @@ def send_tomorrow(msg):
 
 # Функия, отправляющая всем пользователям расписание на указаную дату
 def send_mail(data_weekday, date):
-    for user in [[423052299, 32, True, False]]:
+    for user in joinedUsers:
         if user[1] and user[2]:
             # FIXME: Handle users who blocked bot
             try:
