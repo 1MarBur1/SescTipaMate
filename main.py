@@ -212,13 +212,14 @@ def callback_inline(call):
                         parse_mode="markdown"
                     )
                 if call.data == "openTomorrow":
-                    bot.send_message(
-                        call.message.chat.id,
-                        format_schedule(
-                            sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(call.message.chat.id)][1]),
-                            tomorrowDate.date()),
-                        parse_mode="markdown"
-                    )
+                    # bot.send_message(
+                    #     call.message.chat.id,
+                    #     format_schedule(
+                    #         sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(call.message.chat.id)][1]),
+                    #         tomorrowDate.date()),
+                    #     parse_mode="markdown"
+                    # )
+                    bot.send_message(call.message.chat.id, "Я немного сломался, уже скоро сможешь увидеть расписание на завтра =)")
             else:
                 bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
     else:
@@ -244,11 +245,12 @@ def send_today(msg):
 def send_tomorrow(msg):
     if users_have_user(msg.chat.id):
         if joinedUsers[get_user_id(msg.chat.id)][1] != 0:
-            bot.send_message(
-                msg.chat.id,
-                format_schedule(sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(msg.chat.id)][1]), tomorrowDate.date()),
-                parse_mode="markdown"
-            )
+            # bot.send_message(
+            #     msg.chat.id,
+            #     format_schedule(sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(msg.chat.id)][1]), tomorrowDate.date()),
+            #     parse_mode="markdown"
+            # )
+            bot.send_message(msg.chat.id, "Я немного сломался, уже скоро сможешь увидеть расписание на завтра =)")
         else:
             bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:

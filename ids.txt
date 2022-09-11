@@ -28,7 +28,7 @@
 276984598,17,True,False,-1,True
 794112864,0,True,False,-1,True
 838412113,23,True,False,-1,True
-423052299,32,True,False,-1,True
+423052299,22,True,False,-1,True
 433165830,32,True,False,-1,True
 1111541572,32,False,False,-1,True
 694209125,32,False,False,-1,True
@@ -78,3 +78,9 @@
 1027786513,13,True,False,-1,True
 653291514,13,True,False,-1,True
 1338696127,13,True,False,-1,True
+708210488,13,True,False,-1,True
+1089642644,13,True,False,-1,True
+1625339530,13,True,False,-1,False
+930226606,30,True,True,-1,True
+2042161100,13,False,False,-1,True
+1485775004,13,True,False,-1,True
