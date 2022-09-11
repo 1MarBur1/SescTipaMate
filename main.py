@@ -7,7 +7,7 @@ from telebot import types, TeleBot
 from dotenv import load_dotenv
 import os
 
-if not "testing" in sys.argv:
+if "testing" not in sys.argv:
     load_dotenv()
     auth_token = os.getenv('token')
 
@@ -29,8 +29,10 @@ classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", 
 groups = []
 joinedUsers = []
 
+
 def extract_arg(arg):
     return arg[arg.find(" ")::]
+
 
 def get_groups():
     global groups
@@ -40,7 +42,7 @@ def get_groups():
             groups.append(i[1])
 
 
-if (not "testing" in sys.argv):
+if "testing" not in sys.argv:
     joinedFile = open("./ids.txt", "r")
     for line in joinedFile:
         user_id, group, mailing, pinning, pinned_message, get_news = line.strip().split(",")
@@ -131,12 +133,13 @@ def announcement(msg):
     if msg.chat.id in admins:
         for i in joinedUsers:
             if i[5]:
+                # FIXME: Handle users who blocked bot
                 try:
                     bot.send_message(i[0], extract_arg(msg.text))
-                except:
-                    pass
+                except Exception:
+                    continue
     else:
-        bot.send_message(msg.chat.id, dialog("you_are_not_admin"), parse_mode="Markdown")
+        bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"), parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['audiences'])
@@ -179,12 +182,12 @@ def callback_inline(call):
             bot.register_next_step_handler(call.message, get_settings)
 
         elif call.data == "settingMailing":
-                    joinedUsers[get_user_id(call.message.chat.id)][2] = not joinedUsers[get_user_id(call.message.chat.id)][2]
+            joinedUsers[get_user_id(call.message.chat.id)][2] = not joinedUsers[get_user_id(call.message.chat.id)][2]
 
-                    if joinedUsers[get_user_id(call.message.chat.id)][2]:
-                        bot.send_message(call.message.chat.id, dialog.message("mail_activated"))
-                    else:
-                        bot.send_message(call.message.chat.id, dialog.message("mail_deactivated"))
+            if joinedUsers[get_user_id(call.message.chat.id)][2]:
+                bot.send_message(call.message.chat.id, dialog.message("mail_activated"))
+            else:
+                bot.send_message(call.message.chat.id, dialog.message("mail_deactivated"))
 
         elif call.data == "settingPinning":
             joinedUsers[get_user_id(call.message.chat.id)][3] = not joinedUsers[get_user_id(call.message.chat.id)][3]
@@ -212,14 +215,13 @@ def callback_inline(call):
                         parse_mode="markdown"
                     )
                 if call.data == "openTomorrow":
-                    # bot.send_message(
-                    #     call.message.chat.id,
-                    #     format_schedule(
-                    #         sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(call.message.chat.id)][1]),
-                    #         tomorrowDate.date()),
-                    #     parse_mode="markdown"
-                    # )
-                    bot.send_message(call.message.chat.id, "Я немного сломался, уже скоро сможешь увидеть расписание на завтра =)")
+                    bot.send_message(
+                        call.message.chat.id,
+                        format_schedule(
+                            sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(call.message.chat.id)][1]),
+                            tomorrowDate.date()),
+                        parse_mode="markdown"
+                    )
             else:
                 bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
     else:
@@ -245,12 +247,11 @@ def send_today(msg):
 def send_tomorrow(msg):
     if users_have_user(msg.chat.id):
         if joinedUsers[get_user_id(msg.chat.id)][1] != 0:
-            # bot.send_message(
-            #     msg.chat.id,
-            #     format_schedule(sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(msg.chat.id)][1]), tomorrowDate.date()),
-            #     parse_mode="markdown"
-            # )
-            bot.send_message(msg.chat.id, "Я немного сломался, уже скоро сможешь увидеть расписание на завтра =)")
+            bot.send_message(
+                msg.chat.id,
+                format_schedule(sp.for_group(weekday_ % 7 + 1, joinedUsers[get_user_id(msg.chat.id)][1]), tomorrowDate.date()),
+                parse_mode="markdown"
+            )
         else:
             bot.send_message(msg.chat.id, dialog.message("unselected_group"))
     else:
@@ -289,7 +290,7 @@ def send_tomorrow_mail():
 
 # Backup
 def backup():
-    bot.send_message(926132680, get_ids_list(), parse_mode="Markdown")
+    bot.send_message(926132680, get_ids_list(), parse_mode="markdown")
 
 
 # Обновляем все переменные связаные со временем (иначе у бота всегда будет та дата, которая была при запуске)
@@ -315,7 +316,7 @@ def do_schedule():
 
 def main():
     sp.fetch_schedule(weekday_)
-    sp.fetch_schedule(weekday_ + 1)
+    sp.fetch_schedule(weekday_ % 7 + 1)
 
     thread = Thread(target=do_schedule)
     thread.start()
