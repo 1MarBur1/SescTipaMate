@@ -148,10 +148,10 @@ def announcement(msg):
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"), parse_mode="Markdown")
 
 
-@bot.message_handler(commands=['startvote91251'])
+@bot.message_handler(commands=['o'])
 def voteingstart(msg):
     for i in joinedUsers:
-        if (joinedUsers[0] > 0):
+        if (i[0] > 0):
             try:
                 bot.send_message(i[0], "Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx Попытка номер 2, проголосуй еще раз, пожалуйста!", reply_markup=votingButtons)
             except Exception:
