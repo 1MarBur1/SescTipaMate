@@ -27,7 +27,8 @@ classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", 
 # user = [user_id, group_id, mailing, pinning, pinned_message, get_news] - модель пользователя
 groups = []
 joinedUsers = []
-
+votingTrue = []
+votingFalse = []
 
 def extract_arg(arg):
     return arg[arg.find(" ")::]
@@ -63,6 +64,12 @@ button_dnevnik = types.InlineKeyboardButton(dialog.message("menu_lycreg"), url='
 defaultButtons.add(button1)
 defaultButtons.add(button2)
 defaultButtons.add(button_dnevnik)
+
+votingButtons = types.InlineKeyboardMarkup()
+buttontrue = types.InlineKeyboardButton("Сейчас лучше!", callback_data="votingTrue")
+buttonfalse = types.InlineKeyboardButton("Раньше было лучше!",  callback_data="votingFalse")
+votingButtons.add(buttontrue)
+votingButtons.add(buttonfalse)
 
 
 def users_have_user(user):
@@ -141,6 +148,13 @@ def announcement(msg):
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"), parse_mode="Markdown")
 
 
+for i in [joinedUsers]:
+    try:
+        bot.send_message(i[0], "Привет! Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx", reply_markup=votingButtons)
+    except Exception:
+        continue
+
+
 @bot.message_handler(commands=['audiences'])
 def send_audiences(msg):
     img = open('assets/images/audiences.png', mode='rb')
@@ -204,6 +218,31 @@ def callback_inline(call):
 
             bot.send_message(call.message.chat.id, f"Теперь я{pinned_message} буду присылать тебе уведомления об обновлениях бота")
 
+        elif call.data == "votingTrue":
+            if not (call.message.chat.id in votingTrue or call.message.chat.id in votingFalse):
+                votingTrue.append(call.message.chat.username)
+                bot.send_message(
+                    call.message.chat.id,
+                    "Спасибо за твой отзыв!"
+                )
+            else:
+                bot.send_message(
+                    call.message.chat.id,
+                    "Ты уже проголосовал!"
+                )
+        elif call.data == "votingFalse":
+            if not (call.message.chat.id in votingTrue or call.message.chat.id in votingFalse):
+                votingFalse.append(call.message.chat.username)
+                bot.send_message(
+                    call.message.chat.id,
+                    "Спасибо за твой отзыв!"
+                )
+            else:
+                bot.send_message(
+                    call.message.chat.id,
+                    "Ты уже проголосовал!"
+                )
+
         else:
             if joinedUsers[get_user_id(call.message.chat.id)][1] != 0:
                 if call.data == "openToday":
@@ -213,7 +252,7 @@ def callback_inline(call):
                                         today.date()),
                         parse_mode="markdown"
                     )
-                if call.data == "openTomorrow":
+                elif call.data == "openTomorrow":
                     bot.send_message(
                         call.message.chat.id,
                         format_schedule(
@@ -225,6 +264,14 @@ def callback_inline(call):
                 bot.send_message(call.message.chat.id, dialog.message("unselected_group"))
     else:
         bot.send_message(call.message.chat.id, dialog.message("unregistered_user"))
+
+
+@bot.message_handler(commands=['getvote'])
+def get_vote(msg):
+    if msg.chat.id in admins:
+        bot.send_message(msg.chat.id, f"За: {len(votingTrue)}\n{votingTrue}\n\nПротив: {len(votingFalse)}\n{votingFalse}")
+    else:
+        bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"))
 
 
 @bot.message_handler(commands=['today'])
