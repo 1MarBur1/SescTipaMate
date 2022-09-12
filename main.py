@@ -148,11 +148,14 @@ def announcement(msg):
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"), parse_mode="Markdown")
 
 
-for i in joinedUsers:
-    try:
-        bot.send_message(i[0], "Привет! Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx", reply_markup=votingButtons)
-    except Exception:
-        continue
+@bot.message_handler(commands=['startvote91251'])
+def voteingstart(msg):
+    for i in joinedUsers:
+        if (joinedUsers[0] > 0):
+            try:
+                bot.send_message(i[0], "Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx Попытка номер 2, проголосуй еще раз, пожалуйста!", reply_markup=votingButtons)
+            except Exception:
+                continue
 
 
 @bot.message_handler(commands=['audiences'])
@@ -219,7 +222,7 @@ def callback_inline(call):
             bot.send_message(call.message.chat.id, f"Теперь я{pinned_message} буду присылать тебе уведомления об обновлениях бота")
 
         elif call.data == "votingTrue":
-            if not (call.message.chat.id in votingTrue or call.message.chat.id in votingFalse):
+            if not (call.message.chat.username in votingTrue or call.message.chat.username in votingFalse):
                 votingTrue.append(call.message.chat.username)
                 bot.send_message(
                     call.message.chat.id,
