@@ -148,7 +148,7 @@ def announcement(msg):
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"), parse_mode="Markdown")
 
 
-for i in [joinedUsers]:
+for i in joinedUsers:
     try:
         bot.send_message(i[0], "Привет! Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx", reply_markup=votingButtons)
     except Exception:
