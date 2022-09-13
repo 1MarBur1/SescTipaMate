@@ -30,6 +30,7 @@ joinedUsers = []
 votingTrue = []
 votingFalse = []
 
+
 def extract_arg(arg):
     return arg[arg.find(" ")::]
 
@@ -37,9 +38,9 @@ def extract_arg(arg):
 def get_groups():
     global groups
 
-    for i in joinedUsers:
-        if i[1] and not i[1] in groups:
-            groups.append(i[1])
+    for user in joinedUsers:
+        if user[1] and not user[1] in groups:
+            groups.append(user[1])
 
 
 if "testing" not in sys.argv:
@@ -117,9 +118,9 @@ def open_menu(msg):
 def get_ids_list():
     ids_list = dialog.message("accounts_amount", amount=len(joinedUsers))
     ids_list += "```\n"
-    for i in joinedUsers:
+    for user in joinedUsers:
         ids_list += "\n"
-        ids_list += str(i).replace("[", "").replace("]", "").replace(" ", "")
+        ids_list += str(user).replace("[", "").replace("]", "").replace(" ", "")
     ids_list += "```"
 
     return ids_list
@@ -137,11 +138,11 @@ def open_admin(msg):
 @bot.message_handler(commands=['announcement'])
 def announcement(msg):
     if msg.chat.id in admins:
-        for i in joinedUsers:
-            if i[5]:
+        for user in joinedUsers:
+            if user[5]:
                 # FIXME: Handle users who blocked bot
                 try:
-                    bot.send_message(i[0], extract_arg(msg.text))
+                    bot.send_message(user[0], extract_arg(msg.text))
                 except Exception:
                     continue
     else:
@@ -149,11 +150,11 @@ def announcement(msg):
 
 
 @bot.message_handler(commands=['o'])
-def voteingstart(msg):
-    for i in joinedUsers:
-        if (i[0] > 0):
+def voting_start(msg):
+    for user in joinedUsers:
+        if user[0] > 0:
             try:
-                bot.send_message(i[0], "Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx Попытка номер 2, проголосуй еще раз, пожалуйста!", reply_markup=votingButtons)
+                bot.send_message(user[0], "Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx Попытка номер 2, проголосуй еще раз, пожалуйста!", reply_markup=votingButtons)
             except Exception:
                 continue
 
@@ -349,6 +350,9 @@ def update_dates():
     today = datetime.datetime.today() + datetime.timedelta(hours=5)
     weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
     tomorrowDate = datetime.datetime.now() + datetime.timedelta(days=1, hours=5)
+
+    sp.fetch_schedule(weekday_)
+    sp.fetch_schedule(weekday_ % 7 + 1)
 
 
 # Здесь устанавливаем всякие таймера на апдейт переменных раз в день, время рассылок и т.д.

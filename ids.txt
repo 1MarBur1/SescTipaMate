@@ -66,7 +66,7 @@
 611932424,15,True,True,4383,True
 952666173,20,True,False,-1,True
 1317421393,21,True,False,-1,True
-1118340091,0,True,False,-1,True
+1118340091,29,True,False,-1,True
 1122600721,15,True,False,-1,True
 1316205511,29,True,False,-1,True
 1228198308,29,True,False,-1,True
@@ -81,7 +81,7 @@
 708210488,13,True,False,-1,True
 1089642644,13,True,False,-1,True
 1625339530,13,True,False,-1,False
-930226606,30,True,True,4401,True
+930226606,21,True,True,4401,True
 2042161100,13,False,False,-1,True
 1485775004,13,True,False,-1,True
 799577694,13,True,False,-1,True
@@ -89,3 +89,14 @@
 1011257275,21,True,False,-1,True
 852323351,21,True,False,-1,True
 718454380,20,True,False,-1,True
+1011113092,0,True,False,-1,True
+840620293,18,False,False,-1,True
+961912569,18,True,False,-1,True
+1480157457,18,True,False,-1,True
+755414810,18,True,False,-1,True
+1037267793,18,True,False,-1,True
+1057576754,18,False,False,-1,True
+988683688,18,True,False,-1,True
+865143915,18,True,False,-1,True
+5476055119,18,True,False,-1,True
+1011485884,20,True,False,-1,True
