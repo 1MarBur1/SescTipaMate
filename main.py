@@ -25,7 +25,6 @@ classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", 
            "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
 # user = [user_id, group_id, mailing, pinning, pinned_message, get_news] - модель пользователя
-groups = []
 joinedUsers = []
 votingTrue = []
 votingFalse = []
@@ -35,21 +34,12 @@ def extract_arg(arg):
     return arg[arg.find(" ")::]
 
 
-def get_groups():
-    global groups
-
-    for user in joinedUsers:
-        if user[1] and not user[1] in groups:
-            groups.append(user[1])
-
-
 if "testing" not in sys.argv:
     joinedFile = open("./ids.txt", "r")
     for line in joinedFile:
         user_id, group, mailing, pinning, pinned_message, get_news = line.strip().split(",")
         joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True", int(pinned_message), get_news == "True"])
     joinedFile.close()
-    get_groups()
 
 admins = [926132680, 423052299]
 
@@ -103,7 +93,6 @@ def send_welcome(msg):
         joinedUsers.append([msg.chat.id, 0, True, False, -1, True])
 
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
-        get_groups()
     else:
         message_for_registered_user = dialog.message("group_already_registered" if msg.chat.id < 0 else "user_already_registered")
         bot.send_message(msg.chat.id, message_for_registered_user)
@@ -193,7 +182,6 @@ def callback_inline(call):
                     bot.send_message(msg.chat.id, dialog.message("group_selected", group=msg.text.upper()))
 
                     joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
-                    get_groups()
                 else:
                     bot.send_message(msg.chat.id, dialog.message("unknown_group"))
             bot.register_next_step_handler(call.message, get_settings)
