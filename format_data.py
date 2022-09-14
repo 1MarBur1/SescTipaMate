@@ -1,10 +1,15 @@
 import requests
+from requests.utils import default_headers
 import json
+import logging
 from collections import defaultdict
 
 lessons_time = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
-groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
-          "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
+groups = {
+    "8А": 1, "8В": 2, "9В": 3, "9A": 4, "9Б": 5, "11А": 6, "11Б": 7, "11В": 8, "9Е": 9, "9Г": 11, "10А": 12, "10Б": 13,
+    "10В": 14, "10Г": 15, "10Д": 16, "10Е": 17, "10З": 18, "10К": 19, "10Л": 20, "10М": 21, "10Н": 22, "10С": 23,
+    "11Г": 24, "11Д": 25, "11Е": 26, "11З": 27, "11К": 28, "11Л": 29, "11М": 30, "11С": 31, "11Н": 32
+}
 
 
 class ScheduleProvider:
@@ -19,8 +24,15 @@ class ScheduleProvider:
             "groups": defaultdict(lambda: [])
         }
 
-        for group in range(1, len(groups) + 1):
-            response = requests.get(f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day}&group={group}")
+        for group in groups.items():
+            try:
+                response = requests.get(
+                    f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group[1]}",
+                    headers=default_headers()
+                )
+            except requests.exceptions.RequestException:
+                logging.exception(f"During fetching schedule for {group[0]} group request exception has been thrown")
+                continue
             data = json.loads(response.text)
 
             for les in data["lessons"] + data["diffs"]:

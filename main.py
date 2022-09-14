@@ -1,3 +1,4 @@
+import logging
 import schedule
 import time
 import datetime
@@ -91,7 +92,6 @@ def help_message(msg):
 def send_welcome(msg):
     if not users_have_user(msg.chat.id):
         joinedUsers.append([msg.chat.id, 0, True, False, -1, True])
-
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
     else:
         message_for_registered_user = dialog.message("group_already_registered" if msg.chat.id < 0 else "user_already_registered")
@@ -356,6 +356,8 @@ def do_schedule():
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+
     sp.fetch_schedule(weekday_)
     sp.fetch_schedule(weekday_ % 7 + 1)
 
