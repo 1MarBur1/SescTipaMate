@@ -27,7 +27,7 @@ class ScheduleProvider:
         for group in groups.items():
             try:
                 response = requests.get(
-                    f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day}&group={group[1]}",
+                    f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group[1]}",
                     headers=default_headers()
                 )
             except requests.exceptions.RequestException:
