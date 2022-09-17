@@ -5,62 +5,70 @@ from aiogram_dialog.widgets.kbd import *
 from aiogram_dialog.widgets.text import Const
 
 from stringi18n import i18n
+from database import database
 
 
 class SettingsStateFlow(StatesGroup):
-    main = State()
-    group = State()
+    main_state = State()
+    group_state = State()
 
-    @staticmethod
-    async def set_group(query: CallbackQuery, button: Button, manager: DialogManager):
-        await SettingsStateFlow.group.set()
-        await manager.switch_to(SettingsStateFlow.group)
+    @classmethod
+    async def set_group(cls, query: CallbackQuery, button: Button, manager: DialogManager):
+        await cls.group_state.set()
+        await manager.switch_to(cls.group_state)
 
-    @staticmethod
-    async def on_group_done(query: CallbackQuery, button: Button, manager: DialogManager):
-        await SettingsStateFlow.main.set()
-        await manager.switch_to(SettingsStateFlow.main)
+    @classmethod
+    async def on_group_done(cls, query: CallbackQuery, button: Button, manager: DialogManager):
+        await cls.main_state.set()
+        await manager.switch_to(cls.main_state)
 
-    @staticmethod
-    async def toggle_mail(event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
+    @classmethod
+    async def toggle_mail(cls, event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
         ...
 
-    @staticmethod
-    async def toggle_pinning(event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
+    @classmethod
+    async def toggle_pinning(cls, event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
         ...
 
-    @staticmethod
-    async def toggle_news(event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
+    @classmethod
+    async def toggle_news(cls, event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
         ...
 
-    @staticmethod
-    async def on_done(query: CallbackQuery, button: Button, manager: DialogManager):
+    @classmethod
+    async def on_done(cls, query: CallbackQuery, button: Button, manager: DialogManager):
         await manager.done()
         await query.message.delete()
 
-    main_window = Window(
-        Const("*Настройки*\nЗдесь можно изменить конфигурацию бота"),
-        Button(Const(f"Класс: {None}"), id="settings_group", on_click=set_group),
-        *(
-            Checkbox(
-                Const(f"{i18n.string(i[0])} ✅"),
-                Const(f"{i18n.string(i[0])} 🚫"),
-                id=i[0],
-                on_state_changed=i[1],
-            ) for i in (
-                ("settings_mail", toggle_mail),
-                ("settings_pinning", toggle_pinning),
-                ("settings_news", toggle_news)
-            )
-        ),
-        Button(Const("Готово ↩"), id="done", on_click=on_done),
-        state=main,
-        parse_mode=ParseMode.MARKDOWN_V2
-    )
+    @classmethod
+    def create_main_window(cls, chat_id):
+        # TODO: check chat_id exists
+        chat_data = database.get_chat_data(chat_id)
+        return Window(
+            Const("*Настройки*\nЗдесь можно изменить конфигурацию бота"),
+            Button(Const(f"Класс: {chat_data[1]}"), id="settings_group", on_click=cls.set_group),
+            *(
+                Checkbox(
+                    Const(f"{i18n.string(i[0])} ✅"),
+                    Const(f"{i18n.string(i[0])} 🚫"),
+                    id=i[0],
+                    on_state_changed=i[1],
+                    default=True
+                ) for i in (
+                    ("settings_mail", cls.toggle_mail),
+                    ("settings_pinning", cls.toggle_pinning),
+                    ("settings_news", cls.toggle_news)
+                )
+            ),
+            Button(Const("Готово ↩"), id="done", on_click=cls.on_done),
+            state=cls.main_state,
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
 
-    group_window = Window(
-        Const("*Настройки* → *Класс*\nДля выбора класса отправь его в формате '12Я'\n⚠ _Старый класс заменится на новый_"),
-        Button(Const("Готово ↩"), id="group_done", on_click=on_group_done),
-        state=group,
-        parse_mode=ParseMode.MARKDOWN_V2
-    )
+    @classmethod
+    def create_group_window(cls):
+        return Window(
+            Const(f"*Настройки → Класс*\n*Текущий класс*: {None}\n\nДля выбора класса отправь его в формате '12Я'\n⚠ _Старый класс заменится на новый_"),
+            Button(Const("Готово ↩"), id="group_done", on_click=cls.on_group_done),
+            state=cls.group_state,
+            parse_mode=ParseMode.MARKDOWN_V2
+        )

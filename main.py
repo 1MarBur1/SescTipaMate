@@ -15,6 +15,7 @@ from aiogram_dialog.widgets.kbd import Button
 from settings_flow import SettingsStateFlow
 from stringi18n import i18n, init_i18n
 from format_data import ScheduleProvider, format_schedule
+from database import database
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 bot = Bot(token=TEST_BOT_TOKEN)
@@ -25,7 +26,6 @@ sp = ScheduleProvider()
 today = None
 
 admins = [926132680, 423052299]
-joinedChats = {}
 
 defaultButtons = types.InlineKeyboardMarkup()
 button1 = types.InlineKeyboardButton(i18n.string("menu_today"), callback_data="openToday")
@@ -45,9 +45,9 @@ def get_time():
 
 
 def get_ids_list():
-    ids_list = i18n.string("accounts_amount", amount=len(joinedChats))
+    ids_list = i18n.string("accounts_amount", amount=len(database.joinedChats))
     ids_list += "```\n"
-    for chat in joinedChats:
+    for chat in database.joinedChats:
         ids_list += "\n"
         ids_list += str(chat).replace("[", "").replace("]", "").replace(" ", "")
     ids_list += "```"
@@ -58,8 +58,8 @@ def get_ids_list():
 @dispatcher.message_handler(commands=["start"])
 async def send_welcome(message: types.Message):
     chat_id = message.chat.id
-    if chat_id not in joinedChats:
-        joinedChats[chat_id] = [0, True, False, -1, True]
+    if not database.has_chat(chat_id):
+        database.set_chat_data(chat_id, [0, True, False, -1, True])
         await bot.send_message(chat_id, i18n.string("welcome", name=message.chat.first_name), parse_mode="markdown")
     else:
         await bot.send_message(chat_id, i18n.string(
@@ -105,11 +105,12 @@ async def send_audiences(message: types.Message):
 @dispatcher.message_handler(commands=["today"])
 async def send_today(message: types.Message):
     chat_id = message.chat.id
-    if chat_id in joinedChats:
-        if joinedChats[chat_id][1] != 0:
+    if database.has_chat(chat_id):
+        chat_data = database.get_chat_data(chat_id)
+        if chat_data[1] != 0:
             await bot.send_message(
                 chat_id,
-                format_schedule(sp.for_group(get_time().weekday(), joinedChats[chat_id][1]), get_time().date()),
+                format_schedule(sp.for_group(get_time().weekday(), chat_data[1]), get_time().date()),
                 parse_mode="markdown"
             )
         else:
