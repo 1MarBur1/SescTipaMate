@@ -80,7 +80,6 @@ async def manage_settings(message: types.Message, dialog_manager: DialogManager)
 
 @dispatcher.message_handler(state=SettingsStateFlow.group)
 async def on_group_send(message: types.Message, state: FSMContext):
-    print("D")
     groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
               "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
     received_group = message.text.strip()
@@ -88,8 +87,7 @@ async def on_group_send(message: types.Message, state: FSMContext):
     if received_group in groups:
         ...
     else:
-        # await bot.answer_callback_query(chat_id, text="Wrong group")
-        ...
+        await bot.answer_callback_query("", text="Test")
 
 
 @dispatcher.message_handler(commands=["menu"])
