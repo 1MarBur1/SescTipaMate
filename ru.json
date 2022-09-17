@@ -26,7 +26,7 @@
   "settings_welcome": "*Настройки*",
   "settings_group": "Класс",
   "settings_mail": "Рассылка",
-  "settings_pinning": "Закрепление рассылки",
+  "settings_pin": "Закрепление рассылки",
   "settings_news": "Уведомления об обновлениях",
 
   "you_are_not_admin": "У тебя нет админки =/\nЗа ней обращайся к @xmarburx",

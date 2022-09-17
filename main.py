@@ -1,21 +1,18 @@
 import logging
-import zoneinfo
-from zoneinfo import ZoneInfo
 from datetime import datetime
-import asyncio
+from zoneinfo import ZoneInfo
+
 import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram_dialog import Window, Dialog, DialogRegistry, DialogManager, StartMode
-from aiogram_dialog.widgets.text import Const
-from aiogram_dialog.widgets.kbd import Button
+from aiogram.types import ParseMode
+from aiogram_dialog import Dialog, DialogRegistry, DialogManager, StartMode
 
-from settings_flow import SettingsStateFlow
-from stringi18n import i18n, init_i18n
-from format_data import ScheduleProvider, format_schedule
 from database import database
+from format_data import ScheduleProvider, format_schedule
+from settings_flow import SettingsStateFlow
+from stringi18n import i18n
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 bot = Bot(token=TEST_BOT_TOKEN)
@@ -59,7 +56,7 @@ def get_ids_list():
 async def send_welcome(message: types.Message):
     chat_id = message.chat.id
     if not database.has_chat(chat_id):
-        database.set_chat_data(chat_id, [0, True, False, -1, True])
+        database.set_chat_data(chat_id, {"group": 0, "mail": True, "pin": False, "pinned_message": -1, "news": True})
         await bot.send_message(chat_id, i18n.string("welcome", name=message.chat.first_name), parse_mode="markdown")
     else:
         await bot.send_message(chat_id, i18n.string(
@@ -74,11 +71,11 @@ async def send_help(message: types.Message):
 
 @dispatcher.message_handler(commands=["settings"])
 async def manage_settings(message: types.Message, dialog_manager: DialogManager):
-    await dialog_manager.start(SettingsStateFlow.main, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK)
     await message.delete()
 
 
-@dispatcher.message_handler(state=SettingsStateFlow.group)
+@dispatcher.message_handler(state=SettingsStateFlow.group_state)
 async def on_group_send(message: types.Message, state: FSMContext):
     groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
               "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
@@ -107,11 +104,11 @@ async def send_today(message: types.Message):
     chat_id = message.chat.id
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
-        if chat_data[1] != 0:
+        if chat_data["group"] != 0:
             await bot.send_message(
                 chat_id,
-                format_schedule(sp.for_group(get_time().weekday(), chat_data[1]), get_time().date()),
-                parse_mode="markdown"
+                format_schedule(sp.for_group(get_time().weekday(), chat_data["group"]), get_time().date()),
+                parse_mode=ParseMode.MARKDOWN_V2
             )
         else:
             await bot.send_message(chat_id, i18n.string("unselected_group"))
@@ -140,6 +137,7 @@ if __name__ == "__main__":
     # sp.fetch_schedule(get_time().weekday())
 
     dialog = Dialog(SettingsStateFlow.main_window, SettingsStateFlow.group_window)
+    dialog.on_start = SettingsStateFlow.on_start
     dialog_registry.register(dialog)
 
     executor.start_polling(dispatcher, skip_updates=False)
