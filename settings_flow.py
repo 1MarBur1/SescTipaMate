@@ -59,7 +59,7 @@ class SettingsStateFlow(StatesGroup):
     )
 
     group_window = Window(
-        Const("*Настройки* → *Класс*\nДля выбора класса отправь его в формате '12Я'\n⚠ _Старый класс изменится на новый_"),
+        Const("*Настройки* → *Класс*\nДля выбора класса отправь его в формате '12Я'\n⚠ _Старый класс заменится на новый_"),
         Button(Const("Готово ↩"), id="group_done", on_click=on_group_done),
         state=group,
         parse_mode=ParseMode.MARKDOWN_V2
