@@ -87,7 +87,7 @@ async def on_group_send(message: types.Message, state: FSMContext):
     if received_group in groups:
         ...
     else:
-        await bot.answer_callback_query("", text="Test")
+        ...
 
 
 @dispatcher.message_handler(commands=["menu"])

@@ -1,5 +1,5 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, ParseMode
 from aiogram_dialog import Window, DialogManager, ChatEvent
 from aiogram_dialog.widgets.kbd import *
 from aiogram_dialog.widgets.text import Const
@@ -39,7 +39,7 @@ class SettingsStateFlow(StatesGroup):
         await query.message.delete()
 
     main_window = Window(
-        Const(i18n.string("settings_welcome")),
+        Const("*Настройки*\nЗдесь можно изменить конфигурацию бота"),
         Button(Const(f"Класс: {None}"), id="settings_group", on_click=set_group),
         *(
             Checkbox(
@@ -53,12 +53,14 @@ class SettingsStateFlow(StatesGroup):
                 ("settings_news", toggle_news)
             )
         ),
-        Button(Const("Готово ↩️"), id="done", on_click=on_done),
+        Button(Const("Готово ↩"), id="done", on_click=on_done),
         state=main,
+        parse_mode=ParseMode.MARKDOWN_V2
     )
 
     group_window = Window(
-        Const(i18n.string("settings_help")),
-        Button(Const("Готово ↩️"), id="group_done", on_click=on_group_done),
-        state=group
+        Const("*Настройки* → *Класс*\nДля выбора класса отправь его в формате '12Я'\n⚠ _Старый класс изменится на новый_"),
+        Button(Const("Готово ↩"), id="group_done", on_click=on_group_done),
+        state=group,
+        parse_mode=ParseMode.MARKDOWN_V2
     )
