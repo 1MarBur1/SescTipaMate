@@ -43,11 +43,11 @@ class ScheduleProvider:
 
 
 def format_schedule(schedule, date):
-    from main import dialog
+    from main import i18n
 
     formatted = [""] * 7
     if not schedule:
-        return dialog.message("mail_no_schedule", date=date)
+        return i18n.string("mail_no_schedule", date=date)
     for lesson in schedule:
         entry = f'    {lesson["subject"]}'
         if lesson["audience"]:
@@ -55,7 +55,7 @@ def format_schedule(schedule, date):
         if lesson["teacher"]:
             entry += f' - _{lesson["teacher"]}_'
         formatted[lesson["number"] - 1] += entry + "\n"
-    result = dialog.message("mail_schedule_header", date=date) + "\n"
+    result = i18n.string("mail_schedule_header", date=date) + "\n"
     for i in range(7):
         if not formatted[i]:
             formatted[i] = "    \[_нет_]\n"

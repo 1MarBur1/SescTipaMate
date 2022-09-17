@@ -5,14 +5,22 @@ from datetime import datetime
 import asyncio
 import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram_dialog import Window, Dialog, DialogRegistry, DialogManager, StartMode
+from aiogram_dialog.widgets.text import Const
+from aiogram_dialog.widgets.kbd import Button
 
-from dialog import Dialog
+from settings_flow import SettingsStateFlow
+from stringi18n import i18n, init_i18n
 from format_data import ScheduleProvider, format_schedule
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 bot = Bot(token=TEST_BOT_TOKEN)
-dispatcher = Dispatcher(bot)
-dialog = Dialog("ru")
+storage = MemoryStorage()
+dispatcher = Dispatcher(bot, storage=storage)
+dialog_registry = DialogRegistry(dispatcher)
 sp = ScheduleProvider()
 today = None
 
@@ -20,9 +28,9 @@ admins = [926132680, 423052299]
 joinedChats = {}
 
 defaultButtons = types.InlineKeyboardMarkup()
-button1 = types.InlineKeyboardButton(dialog.message("menu_today"), callback_data="openToday")
-button2 = types.InlineKeyboardButton(dialog.message("menu_tomorrow"), callback_data="openTomorrow")
-button_dnevnik = types.InlineKeyboardButton(dialog.message("menu_lycreg"), url='https://lycreg.urfu.ru/')
+button1 = types.InlineKeyboardButton(i18n.string("menu_today"), callback_data="openToday")
+button2 = types.InlineKeyboardButton(i18n.string("menu_tomorrow"), callback_data="openTomorrow")
+button_dnevnik = types.InlineKeyboardButton(i18n.string("menu_lycreg"), url='https://lycreg.urfu.ru/')
 defaultButtons.add(button1)
 defaultButtons.add(button2)
 defaultButtons.add(button_dnevnik)
@@ -37,7 +45,7 @@ def get_time():
 
 
 def get_ids_list():
-    ids_list = dialog.message("accounts_amount", amount=len(joinedChats))
+    ids_list = i18n.string("accounts_amount", amount=len(joinedChats))
     ids_list += "```\n"
     for chat in joinedChats:
         ids_list += "\n"
@@ -52,21 +60,41 @@ async def send_welcome(message: types.Message):
     chat_id = message.chat.id
     if chat_id not in joinedChats:
         joinedChats[chat_id] = [0, True, False, -1, True]
-        await bot.send_message(chat_id, dialog.message("welcome", name=message.chat.first_name), parse_mode="markdown")
+        await bot.send_message(chat_id, i18n.string("welcome", name=message.chat.first_name), parse_mode="markdown")
     else:
-        await bot.send_message(chat_id, dialog.message(
+        await bot.send_message(chat_id, i18n.string(
             "group_already_registered" if is_group(chat_id) else "user_already_registered"
         ))
 
 
 @dispatcher.message_handler(commands=["help"])
 async def send_help(message: types.Message):
-    await message.reply(dialog.message("help"))
+    await message.reply(i18n.string("help"))
+
+
+@dispatcher.message_handler(commands=["settings"])
+async def manage_settings(message: types.Message, dialog_manager: DialogManager):
+    await dialog_manager.start(SettingsStateFlow.main, mode=StartMode.RESET_STACK)
+    await message.delete()
+
+
+@dispatcher.message_handler(state=SettingsStateFlow.group)
+async def on_group_send(message: types.Message, state: FSMContext):
+    print("D")
+    groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
+              "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
+    received_group = message.text.strip()
+    chat_id = message.chat.id
+    if received_group in groups:
+        ...
+    else:
+        # await bot.answer_callback_query(chat_id, text="Wrong group")
+        ...
 
 
 @dispatcher.message_handler(commands=["menu"])
 async def open_menu(message: types.Message):
-    await bot.send_message(message.chat.id,  dialog.message("menu_welcome", name=message.from_user.first_name),
+    await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
                            reply_markup=defaultButtons)
 
 
@@ -87,9 +115,9 @@ async def send_today(message: types.Message):
                 parse_mode="markdown"
             )
         else:
-            await bot.send_message(chat_id, dialog.message("unselected_group"))
+            await bot.send_message(chat_id, i18n.string("unselected_group"))
     else:
-        await bot.send_message(chat_id, dialog.message("unregistered_chat"))
+        await bot.send_message(chat_id, i18n.string("unregistered_chat"))
 
 
 @dispatcher.message_handler(commands=["tomorrow"])
@@ -109,7 +137,10 @@ def scheduler():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    # init_i18n()
+    # sp.fetch_schedule(get_time().weekday())
 
-    sp.fetch_schedule(get_time().weekday())
+    dialog = Dialog(SettingsStateFlow.main_window, SettingsStateFlow.group_window)
+    dialog_registry.register(dialog)
 
     executor.start_polling(dispatcher, skip_updates=False)

@@ -23,11 +23,11 @@
   "menu_tomorrow": "Посмотреть расписание на завтра",
   "menu_lycreg": "Открыть эл. дневник",
   
-  "settings_welcome": "Привет! Здесь ты можешь настроить все, что возможно!",
-  "settings_class": "Настроить класс",
-  "settings_mailing": "Включить/выключить рассылку",
-  "settings_pinning": "Включить/выключить закрепление рассылки",
-  "settings_news": "Включить/выключить уведомления об обновлениях бота",
+  "settings_welcome": "Что хочешь настроить?",
+  "settings_group": "Класс",
+  "settings_mail": "Рассылка",
+  "settings_pinning": "Закрепление рассылки",
+  "settings_news": "Уведомления об обновлениях",
 
   "you_are_not_admin": "У тебя нет админки =/\nЗа ней обращайся к @xmarburx",
   "accounts_amount": "Сейчас в боте {amount} аккаунтов:\n"
