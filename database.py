@@ -13,7 +13,7 @@ class ChatDataStorage:
         return chat_id in self.joinedChats
 
     def get_chat_data(self, chat_id):
-        return self.joinedChats.get(chat_id, [])
+        return self.joinedChats.get(chat_id, {})
 
     def set_chat_data(self, chat_id, data):
         self.joinedChats[chat_id].update(data)

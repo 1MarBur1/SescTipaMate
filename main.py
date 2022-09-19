@@ -10,9 +10,10 @@ from aiogram.types import ParseMode
 from aiogram_dialog import Dialog, DialogRegistry, DialogManager, StartMode
 
 from database import database
-from format_data import ScheduleProvider, format_schedule
+from format_data import ScheduleProvider, format_schedule, groups
 from settings_flow import SettingsStateFlow
 from stringi18n import i18n
+
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 bot = Bot(token=TEST_BOT_TOKEN)
@@ -73,18 +74,6 @@ async def send_help(message: types.Message):
 async def manage_settings(message: types.Message, dialog_manager: DialogManager):
     await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK)
     await message.delete()
-
-
-@dispatcher.message_handler(state=SettingsStateFlow.group_state)
-async def on_group_send(message: types.Message, state: FSMContext):
-    groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
-              "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
-    received_group = message.text.strip()
-    chat_id = message.chat.id
-    if received_group in groups:
-        ...
-    else:
-        ...
 
 
 @dispatcher.message_handler(commands=["menu"])
