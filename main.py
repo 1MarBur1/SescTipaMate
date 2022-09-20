@@ -25,21 +25,13 @@ classes = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", 
            "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
 # user = [user_id, group_id, mailing, pinning, pinned_message, get_news] - модель пользователя
-groups = []
 joinedUsers = []
 votingTrue = []
 votingFalse = []
 
+
 def extract_arg(arg):
     return arg[arg.find(" ")::]
-
-
-def get_groups():
-    global groups
-
-    for i in joinedUsers:
-        if i[1] and not i[1] in groups:
-            groups.append(i[1])
 
 
 if "testing" not in sys.argv:
@@ -48,7 +40,6 @@ if "testing" not in sys.argv:
         user_id, group, mailing, pinning, pinned_message, get_news = line.strip().split(",")
         joinedUsers.append([int(user_id), int(group), mailing == "True", pinning == "True", int(pinned_message), get_news == "True"])
     joinedFile.close()
-    get_groups()
 
 admins = [926132680, 423052299]
 
@@ -102,7 +93,6 @@ def send_welcome(msg):
         joinedUsers.append([msg.chat.id, 0, True, False, -1, True])
 
         bot.send_message(msg.chat.id, dialog.message("welcome", name=msg.from_user.first_name))
-        get_groups()
     else:
         message_for_registered_user = dialog.message("group_already_registered" if msg.chat.id < 0 else "user_already_registered")
         bot.send_message(msg.chat.id, message_for_registered_user)
@@ -117,9 +107,9 @@ def open_menu(msg):
 def get_ids_list():
     ids_list = dialog.message("accounts_amount", amount=len(joinedUsers))
     ids_list += "```\n"
-    for i in joinedUsers:
+    for user in joinedUsers:
         ids_list += "\n"
-        ids_list += str(i).replace("[", "").replace("]", "").replace(" ", "")
+        ids_list += str(user).replace("[", "").replace("]", "").replace(" ", "")
     ids_list += "```"
 
     return ids_list
@@ -137,11 +127,11 @@ def open_admin(msg):
 @bot.message_handler(commands=['announcement'])
 def announcement(msg):
     if msg.chat.id in admins:
-        for i in joinedUsers:
-            if i[5]:
+        for user in joinedUsers:
+            if user[5]:
                 # FIXME: Handle users who blocked bot
                 try:
-                    bot.send_message(i[0], extract_arg(msg.text))
+                    bot.send_message(user[0], extract_arg(msg.text))
                 except Exception:
                     continue
     else:
@@ -149,11 +139,11 @@ def announcement(msg):
 
 
 @bot.message_handler(commands=['o'])
-def voteingstart(msg):
-    for i in joinedUsers:
-        if (i[0] > 0):
+def voting_start(msg):
+    for user in joinedUsers:
+        if user[0] > 0:
             try:
-                bot.send_message(i[0], "Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx Попытка номер 2, проголосуй еще раз, пожалуйста!", reply_markup=votingButtons)
+                bot.send_message(user[0], "Как ты мог(ла) заметить, дизайн слегка изменился. Мнения разошлись. Кому-то нравится, кто-то говорит, что очень неудобно =( Что думаешь? Нажми кнопку ниже, чтобы проголосовать. А если у тебя есть какое-то предложение, то напиши @xmarburx Попытка номер 2, проголосуй еще раз, пожалуйста!", reply_markup=votingButtons)
             except Exception:
                 continue
 
@@ -192,7 +182,6 @@ def callback_inline(call):
                     bot.send_message(msg.chat.id, dialog.message("group_selected", group=msg.text.upper()))
 
                     joinedUsers[get_user_id(msg.chat.id)][1] = classes.index(msg.text.upper()) + 1
-                    get_groups()
                 else:
                     bot.send_message(msg.chat.id, dialog.message("unknown_group"))
             bot.register_next_step_handler(call.message, get_settings)
@@ -349,6 +338,9 @@ def update_dates():
     today = datetime.datetime.today() + datetime.timedelta(hours=5)
     weekday_ = (datetime.datetime.today() + datetime.timedelta(hours=5)).weekday() + 1
     tomorrowDate = datetime.datetime.now() + datetime.timedelta(days=1, hours=5)
+
+    sp.fetch_schedule(weekday_)
+    sp.fetch_schedule(weekday_ % 7 + 1)
 
 
 # Здесь устанавливаем всякие таймера на апдейт переменных раз в день, время рассылок и т.д.
