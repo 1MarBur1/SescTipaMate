@@ -138,7 +138,7 @@ def announcement(msg):
         bot.send_message(msg.chat.id, dialog.message("you_are_not_admin"), parse_mode="Markdown")
 
 
-@bot.message_handler(commands=['o'])
+@bot.message_handler(commands=['vote9185153'])
 def voting_start(msg):
     for user in joinedUsers:
         if user[0] > 0:
