@@ -16,6 +16,8 @@ class ChatDataStorage:
         return self.joinedChats.get(chat_id, {})
 
     def set_chat_data(self, chat_id, data):
+        if not self.has_chat(chat_id):
+            self.joinedChats[chat_id] = {}
         self.joinedChats[chat_id].update(data)
 
 

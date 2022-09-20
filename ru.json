@@ -23,11 +23,15 @@
   "menu_tomorrow": "Расписание на завтра",
   "menu_lycreg": "Открыть эл. дневник",
   
-  "settings_welcome": "*Настройки*",
-  "settings_group": "Класс",
+  "settings_header": "*Настройки*\nЗдесь можно изменить конфигурацию бота",
+  "settings_group_header": "*Настройки → Класс*\n*Текущий класс*: {group}\n\nДля выбора класса отправь его в формате '12Я'\n⚠ _Старый класс заменится на новый_",
+  "settings_group": "Класс: {group}",
+  "settings_group_set": "Класс установлен: *{before} → {after}*",
+  "settings_group_unknown": "Неизвестный класс",
   "settings_mail": "Рассылка",
   "settings_pin": "Закрепление рассылки",
   "settings_news": "Уведомления об обновлениях",
+  "settings_done": "Готово ↩",
 
   "you_are_not_admin": "У тебя нет админки =/\nЗа ней обращайся к @xmarburx",
   "accounts_amount": "Сейчас в боте {amount} аккаунтов:\n"

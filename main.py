@@ -5,12 +5,11 @@ from zoneinfo import ZoneInfo
 import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from aiogram.dispatcher import FSMContext
-from aiogram.types import ParseMode
+from aiogram.types import ParseMode, Message
 from aiogram_dialog import Dialog, DialogRegistry, DialogManager, StartMode
 
 from database import database
-from format_data import ScheduleProvider, format_schedule, groups
+from format_data import ScheduleProvider, format_schedule
 from settings_flow import SettingsStateFlow
 from stringi18n import i18n
 
@@ -54,7 +53,7 @@ def get_ids_list():
 
 
 @dispatcher.message_handler(commands=["start"])
-async def send_welcome(message: types.Message):
+async def send_welcome(message: Message):
     chat_id = message.chat.id
     if not database.has_chat(chat_id):
         database.set_chat_data(chat_id, {"group": 0, "mail": True, "pin": False, "pinned_message": -1, "news": True})
@@ -66,30 +65,30 @@ async def send_welcome(message: types.Message):
 
 
 @dispatcher.message_handler(commands=["help"])
-async def send_help(message: types.Message):
+async def send_help(message: Message):
     await message.reply(i18n.string("help"))
 
 
 @dispatcher.message_handler(commands=["settings"])
-async def manage_settings(message: types.Message, dialog_manager: DialogManager):
+async def manage_settings(message: Message, dialog_manager: DialogManager):
     await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK)
     await message.delete()
 
 
 @dispatcher.message_handler(commands=["menu"])
-async def open_menu(message: types.Message):
+async def open_menu(message: Message):
     await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
                            reply_markup=defaultButtons)
 
 
 @dispatcher.message_handler(commands=["audiences"])
-async def send_audiences(message: types.Message):
+async def send_audiences(message: Message):
     with open("assets/images/audiences.png", mode="rb") as image:
         await bot.send_photo(message.chat.id, image)
 
 
 @dispatcher.message_handler(commands=["today"])
-async def send_today(message: types.Message):
+async def send_today(message: Message):
     chat_id = message.chat.id
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
@@ -106,7 +105,7 @@ async def send_today(message: types.Message):
 
 
 @dispatcher.message_handler(commands=["tomorrow"])
-async def send_tomorrow(message: types.Message):
+async def send_tomorrow(message: Message):
     ...
 
 
