@@ -33,7 +33,7 @@
 1111541572,32,False,False,-1,True
 694209125,32,False,False,-1,True
 981270396,17,True,False,-1,True
-895211275,32,True,False,-1,True
+895211275,32,False,False,-1,True
 1344771495,32,True,False,-1,True
 5326851792,16,True,False,-1,True
 1883744570,32,True,False,-1,True
@@ -51,8 +51,8 @@
 828350863,29,True,False,-1,True
 5038996642,23,False,False,-1,True
 815742918,32,False,False,-1,True
-782373262,0,True,False,-1,True
-926132680,22,True,True,7686,True
+782373262,22,True,False,-1,True
+926132680,22,True,True,8078,True
 1784015715,20,True,False,-1,True
 955446516,20,False,False,-1,True
 1764208987,20,False,False,-1,True
@@ -63,7 +63,7 @@
 825949147,20,True,False,-1,True
 1869895699,29,True,False,-1,True
 977410199,0,True,False,-1,True
-611932424,15,True,True,7695,True
+611932424,15,True,True,8087,True
 952666173,20,True,False,-1,True
 1317421393,21,True,False,-1,True
 1118340091,29,True,False,-1,True
@@ -81,7 +81,7 @@
 708210488,13,True,False,-1,True
 1089642644,13,True,False,-1,True
 1625339530,13,True,False,-1,False
-930226606,21,True,True,7715,True
+930226606,21,True,True,8105,True
 2042161100,13,False,False,-1,True
 1485775004,13,True,False,-1,True
 799577694,13,True,False,-1,True
@@ -107,3 +107,8 @@
 389843067,16,True,False,-1,True
 717194354,29,True,False,-1,True
 -1001534967971,17,True,False,-1,False
+1193796157,23,True,False,-1,True
+732119880,17,True,False,-1,True
+1066859032,20,True,False,-1,True
+1377286260,18,True,False,-1,True
+1036668767,17,True,True,8129,True
