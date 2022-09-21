@@ -72,3 +72,22 @@ def format_schedule(schedule, date):
         result += f"*{i+1}. {lessons_time[i]}*\n"
         result += f"{formatted[i]}"
     return result
+
+
+def group_name_by_id(group_id):
+    return groups[group_id]
+
+
+def id_by_group_name(group_name):
+    # TODO: bidirectional dictionary (two dicts)
+    for group_id in groups:
+        if groups[group_id] == group_name:
+            return group_id
+
+
+def group_id_exists(group_id):
+    return group_id in groups
+
+
+def group_name_exists(group_name):
+    return group_name in groups.values()

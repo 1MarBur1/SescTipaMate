@@ -71,7 +71,7 @@ async def send_help(message: Message):
 
 @dispatcher.message_handler(commands=["settings"])
 async def manage_settings(message: Message, dialog_manager: DialogManager):
-    await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK, data={})
     await message.delete()
 
 

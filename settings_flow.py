@@ -7,10 +7,13 @@ from aiogram_dialog.widgets.kbd import *
 from aiogram_dialog.widgets.text import Const, Format
 
 from database import database
-from format_data import groups
+from format_data import group_name_by_id, id_by_group_name, group_name_exists
 from stringi18n import i18n
 
 
+# TODO:
+#   1) close settings before message will become uneditable after 48 hours
+#   2) store message ids in database in order not to lose control after restart
 class SettingsStateFlow(StatesGroup):
     main_state = State()
     group_state = State()
@@ -21,7 +24,7 @@ class SettingsStateFlow(StatesGroup):
         chat_data = database.get_chat_data(chat_id)
         for i in ("mail", "pin", "news"):
             await dialog_manager.dialog().find(f"settings_{i}").set_checked(dialog_manager.event, chat_data[i])
-        dialog_manager.current_context().dialog_data["group"] = groups[chat_data["group"]]
+        dialog_manager.current_context().dialog_data["group"] = group_name_by_id(chat_data["group"])
 
     @staticmethod
     async def set_group(query: CallbackQuery, button: Button, dialog_manager: DialogManager):
@@ -42,11 +45,16 @@ class SettingsStateFlow(StatesGroup):
         received_group = message.text.strip()
 
         await SettingsStateFlow.delete_last_query(dialog_data["last_query"])
-        if received_group in groups.values():
-            prev_group = dialog_data["group"]
-            dialog_data["group"] = received_group
-            answer = await message.answer(i18n.string("settings_group_set", before=prev_group, after=received_group),
-                                          parse_mode=ParseMode.MARKDOWN_V2)
+        if group_name_exists(received_group):
+            if dialog_data["group"] == received_group:
+                answer = await message.answer(i18n.string("settings_group_already_set"))
+            else:
+                database.set_chat_data(message.chat.id, {"group": id_by_group_name(received_group)})
+
+                prev_group = dialog_data["group"]
+                dialog_data["group"] = received_group
+                answer = await message.answer(i18n.string("settings_group_set", before=prev_group, after=received_group),
+                                              parse_mode=ParseMode.MARKDOWN_V2)
         else:
             answer = await message.answer(i18n.string("settings_group_unknown"))
         dialog_data["last_query"] = [message, answer]
