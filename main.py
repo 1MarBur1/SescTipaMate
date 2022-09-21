@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import aioschedule
@@ -16,11 +16,12 @@ from stringi18n import i18n
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 bot = Bot(token=TEST_BOT_TOKEN)
+
+# TODO: Redis storage
 storage = MemoryStorage()
 dispatcher = Dispatcher(bot, storage=storage)
 dialog_registry = DialogRegistry(dispatcher)
 sp = ScheduleProvider()
-today = None
 
 admins = [926132680, 423052299]
 
@@ -38,12 +39,12 @@ def is_group(chat_id):
 
 
 def get_time():
-    return datetime.now(ZoneInfo("Asia/Yekaterinburg"))
+    return datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
 
 
 def get_ids_list():
     ids_list = i18n.string("accounts_amount", amount=len(database.joinedChats))
-    ids_list += "```\n"
+    ids_list += "```"
     for chat in database.joinedChats:
         ids_list += "\n"
         ids_list += str(chat).replace("[", "").replace("]", "").replace(" ", "")
@@ -71,7 +72,7 @@ async def send_help(message: Message):
 
 @dispatcher.message_handler(commands=["settings"])
 async def manage_settings(message: Message, dialog_manager: DialogManager):
-    await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK, data={})
+    await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK)
     await message.delete()
 
 
@@ -87,15 +88,14 @@ async def send_audiences(message: Message):
         await bot.send_photo(message.chat.id, image)
 
 
-@dispatcher.message_handler(commands=["today"])
-async def send_today(message: Message):
+async def send_schedule_by_time(message: Message, time):
     chat_id = message.chat.id
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
         if chat_data["group"] != 0:
             await bot.send_message(
                 chat_id,
-                format_schedule(sp.for_group(get_time().weekday(), chat_data["group"]), get_time().date()),
+                format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.date()),
                 parse_mode=ParseMode.MARKDOWN_V2
             )
         else:
@@ -104,8 +104,17 @@ async def send_today(message: Message):
         await bot.send_message(chat_id, i18n.string("unregistered_chat"))
 
 
+@dispatcher.message_handler(commands=["today"])
+async def send_today(message: Message):
+    await send_schedule_by_time(message, get_time())
+
+
 @dispatcher.message_handler(commands=["tomorrow"])
 async def send_tomorrow(message: Message):
+    await send_schedule_by_time(message, get_time() + timedelta(days=1))
+
+
+async def send_mail():
     ...
 
 
