@@ -1,5 +1,5 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import CallbackQuery, ParseMode, ContentType, Message
+from aiogram.types import CallbackQuery, ContentType, Message
 from aiogram_dialog import Window, DialogManager, ChatEvent, ShowMode
 from aiogram_dialog.manager.protocols import ManagedDialogAdapterProto
 from aiogram_dialog.widgets.input import MessageInput
@@ -53,8 +53,9 @@ class SettingsStateFlow(StatesGroup):
 
                 prev_group = dialog_data["group"]
                 dialog_data["group"] = received_group
-                answer = await message.answer(i18n.string("settings_group_set", before=prev_group, after=received_group),
-                                              parse_mode=ParseMode.MARKDOWN_V2)
+                answer = await message.answer(
+                    i18n.string("settings_group_set", before=prev_group, after=received_group)
+                )
         else:
             answer = await message.answer(i18n.string("settings_group_unknown"))
         dialog_data["last_query"] = [message, answer]
@@ -94,7 +95,6 @@ class SettingsStateFlow(StatesGroup):
         Button(Const(i18n.string("settings_done")), id="done", on_click=on_done),
         state=main_state,
         getter=group_getter,
-        parse_mode=ParseMode.MARKDOWN_V2
     )
 
     group_window = Window(
@@ -103,5 +103,4 @@ class SettingsStateFlow(StatesGroup):
         MessageInput(on_group_send, content_types=[ContentType.TEXT]),
         state=group_state,
         getter=group_getter,
-        parse_mode=ParseMode.MARKDOWN_V2
     )

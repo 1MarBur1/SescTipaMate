@@ -15,7 +15,7 @@ from stringi18n import i18n
 
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
-bot = Bot(token=TEST_BOT_TOKEN)
+bot = Bot(token=TEST_BOT_TOKEN, parse_mode=ParseMode.HTML)
 
 # TODO: Redis storage
 storage = MemoryStorage()
@@ -58,7 +58,7 @@ async def send_welcome(message: Message):
     chat_id = message.chat.id
     if not database.has_chat(chat_id):
         database.set_chat_data(chat_id, {"group": 0, "mail": True, "pin": False, "pinned_message": -1, "news": True})
-        await bot.send_message(chat_id, i18n.string("welcome", name=message.chat.first_name), parse_mode="markdown")
+        await bot.send_message(chat_id, i18n.string("welcome", name=message.chat.first_name))
     else:
         await bot.send_message(chat_id, i18n.string(
             "group_already_registered" if is_group(chat_id) else "user_already_registered"
@@ -93,10 +93,10 @@ async def send_schedule_by_time(message: Message, time):
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
         if chat_data["group"] != 0:
+            print(format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.strftime("%d.%m.%Y")))
             await bot.send_message(
                 chat_id,
-                format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.date()),
-                parse_mode=ParseMode.MARKDOWN_V2
+                format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.strftime("%d.%m.%Y")),
             )
         else:
             await bot.send_message(chat_id, i18n.string("unselected_group"))
@@ -114,7 +114,8 @@ async def send_tomorrow(message: Message):
     await send_schedule_by_time(message, get_time() + timedelta(days=1))
 
 
-async def send_mail():
+async def send_mail(date):
+    sp.fetch_schedule(date.weekday())
     ...
 
 
@@ -131,7 +132,9 @@ def scheduler():
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     # init_i18n()
-    # sp.fetch_schedule(get_time().weekday())
+
+    sp.fetch_schedule(get_time().weekday())
+    sp.fetch_schedule((get_time() + timedelta(days=1)).weekday())
 
     dialog = Dialog(SettingsStateFlow.main_window, SettingsStateFlow.group_window)
     dialog.on_start = SettingsStateFlow.on_start
