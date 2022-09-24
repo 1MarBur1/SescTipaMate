@@ -89,14 +89,14 @@ async def send_audiences(message: Message):
         await bot.send_photo(message.chat.id, image)
 
 
-async def send_schedule_by_time(message: Message, time):
+async def send_schedule_for_day(message: Message, date):
     chat_id = message.chat.id
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
         if chat_data["group"] != 0:
             await bot.send_message(
                 chat_id,
-                format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.strftime("%d.%m.%Y")),
+                format_schedule(sp.for_group(date.weekday(), chat_data["group"]), date.strftime("%d.%m.%Y")),
             )
         else:
             await bot.send_message(chat_id, i18n.string("unselected_group"))
@@ -106,16 +106,16 @@ async def send_schedule_by_time(message: Message, time):
 
 @dispatcher.message_handler(commands=["today"])
 async def send_today(message: Message):
-    await send_schedule_by_time(message, get_time())
+    await send_schedule_for_day(message, get_time())
 
 
 @dispatcher.message_handler(commands=["tomorrow"])
 async def send_tomorrow(message: Message):
-    await send_schedule_by_time(message, get_time() + timedelta(days=1))
+    await send_schedule_for_day(message, get_time() + timedelta(days=1))
 
 
 async def send_mail(date):
-    await sp.fetch_schedule(date.weekday())
+    sp.fetch_schedule(date.weekday())
     ...
 
 
@@ -125,8 +125,8 @@ def backup():
 
 def scheduler():
     # aioschedule.every().hour.do(backup)
-    aioschedule.every().days.at("13:00").do(...)
-    aioschedule.every().days.at("02:00").do(...)
+    every().days.at("13:00").do(...)
+    every().days.at("02:00").do(...)
 
 
 async def init(_):
