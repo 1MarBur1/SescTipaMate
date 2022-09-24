@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -5,6 +6,7 @@ from zoneinfo import ZoneInfo
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode, Message
+from aiogram.utils import exceptions
 from aiogram_dialog import Dialog, DialogRegistry, DialogManager, StartMode
 
 from database import database
@@ -37,8 +39,12 @@ def is_group(chat_id):
     return chat_id < 0
 
 
-def get_time():
+def current_local_time():
     return datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
+
+
+def local_time(*args):
+    return datetime(*args, tzinfo=ZoneInfo("Asia/Yekaterinburg"))
 
 
 def get_ids_list():
@@ -46,7 +52,7 @@ def get_ids_list():
     ids_list += "```"
     for chat in database.joinedChats:
         ids_list += "\n"
-        ids_list += str(chat).replace("[", "").replace("]", "").replace(" ", "")
+        ids_list += str(database.get_chat_data(chat))
     ids_list += "```"
 
     return ids_list
@@ -104,26 +110,45 @@ async def send_schedule_for_day(message: Message, date):
 
 @dispatcher.message_handler(commands=["today"])
 async def send_today(message: Message):
-    await send_schedule_for_day(message, get_time())
+    await send_schedule_for_day(message, current_local_time())
 
 
 @dispatcher.message_handler(commands=["tomorrow"])
 async def send_tomorrow(message: Message):
-    await send_schedule_for_day(message, get_time() + timedelta(days=1))
+    await send_schedule_for_day(message, current_local_time() + timedelta(days=1))
 
 
-async def send_mail(date):
-    await sp.fetch_schedule(date.weekday())
-    ...
+async def send_mail():
+    # TODO:
+    #   1) Additional mailing in case of schedule changes
+    #   2) Fine time scheduling, not just magic calculations
+    #   3) Mail message welcome
+    while True:
+        now = current_local_time()
+        delay = (64800 - (now.hour * 3600 + now.minute * 60 + now.second)) % 86400
+        tomorrow = (current_local_time())
+        await asyncio.sleep(delay)
+        await sp.fetch_schedule(tomorrow.weekday())
+        for chat_id in database.joinedChats:
+            chat_data = database.get_chat_data(chat_id)
+            try:
+                await bot.send_message(
+                    chat_id,
+                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]), tomorrow.strftime("%d.%m.%Y"))
+                )
+            except exceptions.TelegramAPIError:
+                # TODO: Properly handle users which cause exceptions.
+                #       For example move they down in the list or even delete from mailing.
+                pass
 
 
-def backup():
-    bot.send_message(926132680, get_ids_list(), parse_mode="markdown")
+async def backup(_):
+    await bot.send_message(926132680, get_ids_list(), parse_mode="markdown")
 
 
 async def init(_):
-    await sp.fetch_schedule(get_time().weekday())
-    await sp.fetch_schedule((get_time() + timedelta(days=1)).weekday())
+    await sp.fetch_schedule(current_local_time().weekday())
+    await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
 
 
 def main():
@@ -134,9 +159,10 @@ def main():
     dialog.on_start = SettingsStateFlow.on_start
     dialog_registry.register(dialog)
 
-    dispatcher.loop.create_task(send_mail(...))
+    asyncio.get_event_loop().create_task(send_mail())
     executor.start_polling(dispatcher, skip_updates=False, on_startup=init)
 
 
 if __name__ == "__main__":
     main()
+
