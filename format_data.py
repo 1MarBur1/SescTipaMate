@@ -1,7 +1,6 @@
 import asyncio
 import logging
 
-import requests
 import aiohttp
 import json
 from collections import defaultdict
@@ -10,13 +9,13 @@ from stringi18n import i18n
 
 lessons_time = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 groups = {
-    0: "undefined", 1: "8А", 2: "8В", 3: "9В", 4: "9A", 5: "9Б", 6: "11А", 7: "11Б", 8: "11В", 9: "9Е", 11: "9Г",
+    0: "undefined", 1: "8А", 2: "8В", 3: "9В", 4: "9А", 5: "9Б", 6: "11А", 7: "11Б", 8: "11В", 9: "9Е", 11: "9Г",
     12: "10А", 13: "10Б", 14: "10В", 15: "10Г", 16: "10Д", 17: "10Е", 18: "10З", 19: "10К", 20: "10Л", 21: "10М",
     22: "10Н", 23: "10С", 24: "11Г", 25: "11Д", 26: "11Е", 27: "11З", 28: "11К", 29: "11Л", 30: "11М", 31: "11С",
     32: "11Н"
 }
 groups_inverse = {
-    "undefined": 0, "8А": 1, "8В": 2, "9В": 3, "9A": 4, "9Б": 5, "11А": 6, "11Б": 7, "11В": 8, "9Е": 9, "9Г": 11,
+    "undefined": 0, "8А": 1, "8В": 2, "9В": 3, "9А": 4, "9Б": 5, "11А": 6, "11Б": 7, "11В": 8, "9Е": 9, "9Г": 11,
     "10А": 12, "10Б": 13, "10В": 14, "10Г": 15, "10Д": 16, "10Е": 17, "10З": 18, "10К": 19, "10Л": 20, "10М": 21,
     "10Н": 22, "10С": 23, "11Г": 24, "11Д": 25, "11Е": 26, "11З": 27, "11К": 28, "11Л": 29, "11М": 30, "11С": 31,
     "11Н": 32
@@ -42,19 +41,23 @@ class ScheduleProvider:
 
         async with aiohttp.ClientSession() as session:
             tasks = []
-            for group in groups.items():
-                url = f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group[0]}"
+            for group in groups:
+                url = f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group}"
                 tasks.append(asyncio.ensure_future(self.fetch_one(session, url)))
 
-            for data in await asyncio.gather(*tasks):
-                for les in data["lessons"] + data["diffs"]:
-                    del les["uid"], les["weekday"]
-                    aud = les.pop("auditory")
-                    lesson = {**les, "audience": aud}
+            for data in await asyncio.gather(*tasks, return_exceptions=True):
+                if isinstance(data, BaseException):
+                    # TODO: logging about broken requests
+                    pass
+                else:
+                    for les in data["lessons"] + data["diffs"]:
+                        del les["uid"], les["weekday"]
+                        aud = les.pop("auditory")
+                        lesson = {**les, "audience": aud}
 
-                    self.__schedule[day]["teachers"][les["teacher"]].append(lesson)
-                    self.__schedule[day]["audiences"][aud].append(lesson)
-                    self.__schedule[day]["groups"][les["group"]].append(lesson)
+                        self.__schedule[day]["teachers"][les["teacher"]].append(lesson)
+                        self.__schedule[day]["audiences"][aud].append(lesson)
+                        self.__schedule[day]["groups"][id_by_group_name(les["group"])].append(lesson)
 
     def for_group(self, day, group):
         return self.__schedule[day]["groups"][group]
@@ -80,7 +83,7 @@ def format_schedule(schedule, date):
     result = i18n.string("mail_schedule_header", date=date) + "\n"
     for i in range(7):
         if not formatted[i]:
-            formatted[i] = "    [_нет_]\n"
+            formatted[i] = "    [<i>нет</i>]\n"
         result += f"<b>{i + 1}. {lessons_time[i]}</b>\n"
         result += f"{formatted[i]}"
     return result

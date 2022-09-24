@@ -1,9 +1,7 @@
-import asyncio
 import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode, Message
@@ -115,18 +113,12 @@ async def send_tomorrow(message: Message):
 
 
 async def send_mail(date):
-    sp.fetch_schedule(date.weekday())
+    await sp.fetch_schedule(date.weekday())
     ...
 
 
 def backup():
     bot.send_message(926132680, get_ids_list(), parse_mode="markdown")
-
-
-def scheduler():
-    # aioschedule.every().hour.do(backup)
-    every().days.at("13:00").do(...)
-    every().days.at("02:00").do(...)
 
 
 async def init(_):
@@ -142,6 +134,7 @@ def main():
     dialog.on_start = SettingsStateFlow.on_start
     dialog_registry.register(dialog)
 
+    dispatcher.loop.create_task(send_mail(...))
     executor.start_polling(dispatcher, skip_updates=False, on_startup=init)
 
 
