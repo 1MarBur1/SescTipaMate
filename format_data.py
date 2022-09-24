@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 
 lessons_time = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
-groups = ["8А", "8В", "9В", "9A", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
+groups = ["8А", "8В", "9В", "9А", "9Б", "11А", "11Б", "11В", "9Е", "", "9Г", "10А", "10Б", "10В", "10Г", "10Д", "10Е",
           "10З", "10К", "10Л", "10М", "10Н", "10С", "11Г", "11Д", "11Е", "11З", "11К", "11Л", "11М", "11С", "11Н"]
 
 
@@ -45,7 +45,7 @@ class ScheduleProvider:
 def format_schedule(schedule, date):
     from main import dialog
 
-    formatted = [[]] * 7
+    formatted = [[] for _ in range(7)]
     if not schedule:
         return dialog.message("mail_no_schedule", date=date)
     for lesson in schedule:
@@ -59,6 +59,6 @@ def format_schedule(schedule, date):
     for i in range(7):
         if not formatted[i]:
             formatted[i]["string"] = "    \[_нет_]"
-        result += f"*{i+1}. {lessons_time[i]}*\n"
+        result += f"*{i + 1}. {lessons_time[i]}*\n"
         result += "\n".join(map(lambda d: d["string"], sorted(formatted[i], key=lambda d: d["subgroup"])))
     return result
