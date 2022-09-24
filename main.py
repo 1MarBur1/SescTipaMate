@@ -43,10 +43,6 @@ def current_local_time():
     return datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
 
 
-def local_time(*args):
-    return datetime(*args, tzinfo=ZoneInfo("Asia/Yekaterinburg"))
-
-
 def get_ids_list():
     ids_list = i18n.string("accounts_amount", amount=len(database.joinedChats))
     ids_list += "```"
@@ -63,9 +59,9 @@ async def send_welcome(message: Message):
     chat_id = message.chat.id
     if not database.has_chat(chat_id):
         database.set_chat_data(chat_id, {"group": 0, "mail": True, "pin": False, "pinned_message": -1, "news": True})
-        await bot.send_message(chat_id, i18n.string("welcome", name=message.chat.first_name))
+        await message.reply(i18n.string("welcome", name=message.chat.first_name))
     else:
-        await bot.send_message(chat_id, i18n.string(
+        await message.reply(i18n.string(
             "group_already_registered" if is_group(chat_id) else "user_already_registered"
         ))
 
@@ -83,8 +79,9 @@ async def manage_settings(message: Message, dialog_manager: DialogManager):
 
 @dispatcher.message_handler(commands=["menu"])
 async def open_menu(message: Message):
-    await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
-                           reply_markup=defaultButtons)
+    # await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
+    #                        reply_markup=defaultButtons)
+    await bot.send_message(message.chat.id, "Nothing here yet...")
 
 
 @dispatcher.message_handler(commands=["audiences"])
@@ -98,10 +95,8 @@ async def send_schedule_for_day(message: Message, date):
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
         if chat_data["group"] != 0:
-            await bot.send_message(
-                chat_id,
-                format_schedule(sp.for_group(date.weekday(), chat_data["group"]), date.strftime("%d.%m.%Y")),
-            )
+            await message.reply(
+                format_schedule(sp.for_group(date.weekday(), chat_data["group"]), date.strftime("%d.%m.%Y")))
         else:
             await bot.send_message(chat_id, i18n.string("unselected_group"))
     else:
@@ -165,4 +160,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
