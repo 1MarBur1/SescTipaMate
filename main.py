@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -93,7 +94,6 @@ async def send_schedule_by_time(message: Message, time):
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
         if chat_data["group"] != 0:
-            print(format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.strftime("%d.%m.%Y")))
             await bot.send_message(
                 chat_id,
                 format_schedule(sp.for_group(time.weekday(), chat_data["group"]), time.strftime("%d.%m.%Y")),
@@ -115,7 +115,7 @@ async def send_tomorrow(message: Message):
 
 
 async def send_mail(date):
-    sp.fetch_schedule(date.weekday())
+    await sp.fetch_schedule(date.weekday())
     ...
 
 
@@ -129,15 +129,21 @@ def scheduler():
     aioschedule.every().days.at("02:00").do(...)
 
 
-if __name__ == "__main__":
+async def init(_):
+    await sp.fetch_schedule(get_time().weekday())
+    await sp.fetch_schedule((get_time() + timedelta(days=1)).weekday())
+
+
+def main():
     logging.basicConfig(level=logging.INFO)
     # init_i18n()
-
-    sp.fetch_schedule(get_time().weekday())
-    sp.fetch_schedule((get_time() + timedelta(days=1)).weekday())
 
     dialog = Dialog(SettingsStateFlow.main_window, SettingsStateFlow.group_window)
     dialog.on_start = SettingsStateFlow.on_start
     dialog_registry.register(dialog)
 
-    executor.start_polling(dispatcher, skip_updates=False)
+    executor.start_polling(dispatcher, skip_updates=False, on_startup=init)
+
+
+if __name__ == "__main__":
+    main()

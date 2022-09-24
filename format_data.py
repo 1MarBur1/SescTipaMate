@@ -1,5 +1,8 @@
+import asyncio
 import logging
+
 import requests
+import aiohttp
 import json
 from collections import defaultdict
 
@@ -24,7 +27,12 @@ class ScheduleProvider:
     def __init__(self):
         self.__schedule = {i: {} for i in range(7)}
 
-    def fetch_schedule(self, day):
+    @staticmethod
+    async def fetch_one(session, url):
+        async with session.get(url) as response:
+            return json.loads(await response.text())
+
+    async def fetch_schedule(self, day):
         # TODO: check schedule diffs compared to previous version
         self.__schedule[day] = {
             "teachers": defaultdict(lambda: []),
@@ -32,25 +40,21 @@ class ScheduleProvider:
             "groups": defaultdict(lambda: [])
         }
 
-        for group in groups.items():
-            print(day + 1, group[0])
-            try:
-                response = requests.get(
-                    f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group[0]}"
-                )
-            except requests.exceptions.RequestException:
-                logging.exception(f"During fetching schedule for {group[1]} group request exception has been thrown")
-                continue
-            data = json.loads(response.text)
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for group in groups.items():
+                url = f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group[0]}"
+                tasks.append(asyncio.ensure_future(self.fetch_one(session, url)))
 
-            for les in data["lessons"] + data["diffs"]:
-                del les["uid"], les["weekday"]
-                aud = les.pop("auditory")
-                lesson = {**les, "audience": aud}
+            for data in await asyncio.gather(*tasks):
+                for les in data["lessons"] + data["diffs"]:
+                    del les["uid"], les["weekday"]
+                    aud = les.pop("auditory")
+                    lesson = {**les, "audience": aud}
 
-                self.__schedule[day]["teachers"][les["teacher"]].append(lesson)
-                self.__schedule[day]["audiences"][aud].append(lesson)
-                self.__schedule[day]["groups"][group[0]].append(lesson)
+                    self.__schedule[day]["teachers"][les["teacher"]].append(lesson)
+                    self.__schedule[day]["audiences"][aud].append(lesson)
+                    self.__schedule[day]["groups"][les["group"]].append(lesson)
 
     def for_group(self, day, group):
         return self.__schedule[day]["groups"][group]
