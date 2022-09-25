@@ -3,6 +3,7 @@ import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import aiohttp
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode, Message
@@ -45,9 +46,11 @@ def current_local_time():
 def get_ids_list():
     ids_list = i18n.string("accounts_amount", amount=len(database.joinedChats))
     ids_list += "```"
-    for chat in database.joinedChats:
+    for chat_id in database.joinedChats:
+        chat_data = database.get_chat_data(chat_id)
         ids_list += "\n"
-        ids_list += str(database.get_chat_data(chat))
+        ids_list += ",".join(map(str, [chat_id, chat_data["group"], chat_data["mail"], chat_data["pin"],
+                                       chat_data["pinned_message"], chat_data["news"]]))
     ids_list += "```"
 
     return ids_list
@@ -137,14 +140,33 @@ async def send_mail():
                 pass
 
 
-async def backup(_):
-    await bot.send_message(926132680, get_ids_list(), parse_mode="markdown")
+@dispatcher.message_handler(commands=["admin"])
+async def send_admin_log(message: Message):
+    await message.reply(await backup())
 
 
-async def init(_):
+async def backup():
+    async with aiohttp.ClientSession() as session:
+        request_data = {
+            "api_dev_key": "Hef-B8ICM1nbTI4JTkwid4JbYPmY327E",
+            "api_option": "paste",
+            "api_paste_code": get_ids_list(),
+            "api_paste_private": "0",
+        }
+        async with session.post("https://pastebin.com/api/api_post.php", data=request_data) as response:
+            return await response.text()
+
+
+async def on_bot_start(_):
     asyncio.get_event_loop().create_task(send_mail())
     await sp.fetch_schedule(current_local_time().weekday())
     await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
+
+
+async def on_bot_destroy(_):
+    message = await backup()
+    await bot.send_message(926132680, message)
+    await bot.send_message(423052299, message)
 
 
 def main():
@@ -159,7 +181,7 @@ def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    executor.start_polling(dispatcher, skip_updates=False, on_startup=init)
+    executor.start_polling(dispatcher, skip_updates=False, on_startup=on_bot_start, on_shutdown=on_bot_destroy)
 
 
 if __name__ == "__main__":
