@@ -2,6 +2,9 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+import sys
+from dotenv import load_dotenv
+import os
 
 import aiohttp
 from aiogram import Bot, Dispatcher, executor, types
@@ -17,7 +20,18 @@ from stringi18n import i18n
 
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
-bot = Bot(token=TEST_BOT_TOKEN, parse_mode=ParseMode.HTML)
+AUTH_TOKEN = ""
+PASTEBIN_AUTH_TOKEN = ""
+
+load_dotenv()
+PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
+if "testing" not in sys.argv:
+    AUTH_TOKEN = os.getenv('AUTH_TOKEN')
+
+if AUTH_TOKEN != "":
+    bot = Bot(token=AUTH_TOKEN, parse_mode=ParseMode.HTML)
+else:
+    bot = Bot(token=TEST_BOT_TOKEN, parse_mode=ParseMode.HTML)
 
 # TODO: Redis storage
 storage = MemoryStorage()
@@ -148,7 +162,7 @@ async def send_admin_log(message: Message):
 async def backup():
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
         request_data = {
-            "api_dev_key": "Hef-B8ICM1nbTI4JTkwid4JbYPmY327E",
+            "api_dev_key": PASTEBIN_AUTH_TOKEN,
             "api_option": "paste",
             "api_paste_code": get_ids_list(),
             "api_paste_private": "0",
