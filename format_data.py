@@ -45,7 +45,7 @@ class ScheduleProvider:
 def format_schedule(schedule, date):
     from main import dialog
 
-    formatted = [[] for _ in range(7)]
+    formatted = [""] * 7
     if not schedule:
         return dialog.message("mail_no_schedule", date=date)
     for lesson in schedule:
