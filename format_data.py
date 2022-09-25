@@ -54,11 +54,11 @@ def format_schedule(schedule, date):
             entry += f' *[{lesson["audience"]}]*'
         if lesson["teacher"]:
             entry += f' - _{lesson["teacher"]}_'
-        formatted[lesson["number"] - 1].append({"string": entry, "subgroup": lesson["subgroup"]})
+        formatted[lesson["number"] - 1] += entry + "\n"
     result = dialog.message("mail_schedule_header", date=date) + "\n"
     for i in range(7):
         if not formatted[i]:
-            formatted[i]["string"] = "    \[_нет_]"
-        result += f"*{i + 1}. {lessons_time[i]}*\n"
-        result += "\n".join(map(lambda d: d["string"], sorted(formatted[i], key=lambda d: d["subgroup"])))
+            formatted[i] = "    \[_нет_]\n"
+        result += f"*{i+1}. {lessons_time[i]}*\n"
+        result += f"{formatted[i]}"
     return result
