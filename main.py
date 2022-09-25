@@ -121,7 +121,7 @@ async def send_mail():
     while True:
         now = current_local_time()
         delay = (64800 - (now.hour * 3600 + now.minute * 60 + now.second)) % 86400
-        tomorrow = (current_local_time())
+        tomorrow = (current_local_time() + timedelta(days=1))
         await asyncio.sleep(delay)
         await sp.fetch_schedule(tomorrow.weekday())
         for chat_id in database.joinedChats:
@@ -142,6 +142,7 @@ async def backup(_):
 
 
 async def init(_):
+    asyncio.get_event_loop().create_task(send_mail())
     await sp.fetch_schedule(current_local_time().weekday())
     await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
 
@@ -155,7 +156,9 @@ def main():
     dialog.on_start = SettingsStateFlow.on_start
     dialog_registry.register(dialog)
 
-    asyncio.get_event_loop().create_task(send_mail())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
     executor.start_polling(dispatcher, skip_updates=False, on_startup=init)
 
 
