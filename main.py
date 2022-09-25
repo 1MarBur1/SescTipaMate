@@ -146,15 +146,14 @@ async def send_admin_log(message: Message):
 
 
 async def backup():
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
         request_data = {
             "api_dev_key": "Hef-B8ICM1nbTI4JTkwid4JbYPmY327E",
             "api_option": "paste",
             "api_paste_code": get_ids_list(),
             "api_paste_private": "0",
         }
-        async with session.post("https://pastebin.com/api/api_post.php", data=request_data,
-                                connector=aiohttp.TCPConnector(verify_ssl=False)) as response:
+        async with session.post("https://pastebin.com/api/api_post.php", data=request_data) as response:
             return await response.text()
 
 

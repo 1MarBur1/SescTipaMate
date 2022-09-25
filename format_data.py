@@ -39,7 +39,7 @@ class ScheduleProvider:
             "groups": defaultdict(lambda: [])
         }
 
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             tasks = []
             for group in groups:
                 url = f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day + 1}&group={group}"
