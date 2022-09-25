@@ -21,7 +21,6 @@ bot = Bot(token=TEST_BOT_TOKEN, parse_mode=ParseMode.HTML)
 # TODO: Redis storage
 storage = MemoryStorage()
 dispatcher = Dispatcher(bot, storage=storage)
-dialog_registry = DialogRegistry(dispatcher)
 sp = ScheduleProvider()
 
 admins = [926132680, 423052299]
@@ -79,15 +78,16 @@ async def manage_settings(message: Message, dialog_manager: DialogManager):
 
 @dispatcher.message_handler(commands=["menu"])
 async def open_menu(message: Message):
+    # TODO: create menu with aiogram_dialog
     # await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
     #                        reply_markup=defaultButtons)
-    await bot.send_message(message.chat.id, "Nothing here yet...")
+    await message.reply("Nothing here yet...")
 
 
 @dispatcher.message_handler(commands=["audiences"])
 async def send_audiences(message: Message):
     with open("assets/images/audiences.png", mode="rb") as image:
-        await bot.send_photo(message.chat.id, image)
+        await message.reply_photo(image)
 
 
 async def send_schedule_for_day(message: Message, date):
@@ -98,9 +98,9 @@ async def send_schedule_for_day(message: Message, date):
             await message.reply(
                 format_schedule(sp.for_group(date.weekday(), chat_data["group"]), date.strftime("%d.%m.%Y")))
         else:
-            await bot.send_message(chat_id, i18n.string("unselected_group"))
+            await message.reply(i18n.string("unselected_group"))
     else:
-        await bot.send_message(chat_id, i18n.string("unregistered_chat"))
+        await message.reply(i18n.string("unregistered_chat"))
 
 
 @dispatcher.message_handler(commands=["today"])
@@ -150,6 +150,7 @@ def main():
     logging.basicConfig(level=logging.INFO)
     # init_i18n()
 
+    dialog_registry = DialogRegistry(dispatcher)
     dialog = Dialog(SettingsStateFlow.main_window, SettingsStateFlow.group_window)
     dialog.on_start = SettingsStateFlow.on_start
     dialog_registry.register(dialog)

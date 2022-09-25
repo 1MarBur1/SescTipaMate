@@ -42,7 +42,7 @@ class SettingsStateFlow(StatesGroup):
     async def on_group_send(message: Message, dialog: ManagedDialogAdapterProto, dialog_manager: DialogManager):
         dialog_manager.show_mode = ShowMode.EDIT
         dialog_data = dialog_manager.current_context().dialog_data
-        received_group = message.text.strip()
+        received_group = message.text.strip().upper()
 
         await SettingsStateFlow.delete_last_query(dialog_data["last_query"])
         if group_name_exists(received_group):
