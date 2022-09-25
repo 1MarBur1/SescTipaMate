@@ -153,7 +153,8 @@ async def backup():
             "api_paste_code": get_ids_list(),
             "api_paste_private": "0",
         }
-        async with session.post("https://pastebin.com/api/api_post.php", data=request_data) as response:
+        async with session.post("https://pastebin.com/api/api_post.php", data=request_data,
+                                connector=aiohttp.TCPConnector(verify_ssl=False)) as response:
             return await response.text()
 
 
