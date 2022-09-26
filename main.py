@@ -130,6 +130,16 @@ async def send_tomorrow(message: Message):
     await send_schedule_for_day(message, current_local_time() + timedelta(days=1))
 
 
+@dispatcher.message_handler(commands=["announcement"])
+async def send_announcement(message: Message):
+    for chat_id in database.joinedChats:
+        chat_data = database.get_chat_data(chat_id)
+        if (chat_data["mail"]):
+            try:
+                await bot.send_message(chat_id, message.text[13:])
+            except:
+                pass
+
 async def send_mail():
     # TODO:
     #   1) Additional mailing in case of schedule changes
