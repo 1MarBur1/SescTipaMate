@@ -143,15 +143,16 @@ async def send_mail():
         await sp.fetch_schedule(tomorrow.weekday())
         for chat_id in database.joinedChats:
             chat_data = database.get_chat_data(chat_id)
-            try:
-                await bot.send_message(
-                    chat_id,
-                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]), tomorrow.strftime("%d.%m.%Y"))
-                )
-            except exceptions.TelegramAPIError:
-                # TODO: Properly handle users which cause exceptions.
-                #       For example move they down in the list or even delete from mailing.
-                pass
+            if chat_data["mail"]:
+                try:
+                    await bot.send_message(
+                        chat_id,
+                        format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]), tomorrow.strftime("%d.%m.%Y"))
+                    )
+                except exceptions.TelegramAPIError:
+                    # TODO: Properly handle users which cause exceptions.
+                    #       For example move they down in the list or even delete from mailing.
+                    pass
 
 
 @dispatcher.message_handler(commands=["admin"])
