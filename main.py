@@ -1,10 +1,9 @@
 import asyncio
 import logging
+import os
+import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-import sys
-from dotenv import load_dotenv
-import os
 
 import aiohttp
 from aiogram import Bot, Dispatcher, executor, types
@@ -12,12 +11,12 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode, Message
 from aiogram.utils import exceptions
 from aiogram_dialog import Dialog, DialogRegistry, DialogManager, StartMode
+from dotenv import load_dotenv
 
 from database import database
 from format_data import ScheduleProvider, format_schedule
 from settings_flow import SettingsStateFlow
 from stringi18n import i18n
-
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 AUTH_TOKEN = ""
@@ -134,13 +133,14 @@ async def send_tomorrow(message: Message):
 async def send_announcement(message: Message):
     for chat_id in database.joinedChats:
         chat_data = database.get_chat_data(chat_id)
-        if (chat_data["mail"]):
+        if chat_data["mail"]:
             try:
                 await bot.send_message(chat_id, message.text[13:])
-            except:
+            except BaseException:
                 pass
 
-async def send_mail():
+
+async def send_mail_task():
     # TODO:
     #   1) Additional mailing in case of schedule changes
     #   2) Fine time scheduling, not just magic calculations
@@ -148,7 +148,7 @@ async def send_mail():
     while True:
         now = current_local_time()
         delay = (64800 - (now.hour * 3600 + now.minute * 60 + now.second)) % 86400
-        tomorrow = (current_local_time() + timedelta(days=1))
+        tomorrow = current_local_time() + timedelta(days=1)
         await asyncio.sleep(delay)
         await sp.fetch_schedule(tomorrow.weekday())
         for chat_id in database.joinedChats:
@@ -164,9 +164,22 @@ async def send_mail():
                 pass
 
 
+async def everyday_fetch_task():
+    while True:
+        now = current_local_time()
+        delay = 86405 - (now.hour * 3600 + now.minute * 60 + now.second)
+        await asyncio.sleep(delay)
+        await sp.fetch_schedule(current_local_time().weekday())
+        await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
+
+
 @dispatcher.message_handler(commands=["admin"])
 async def send_admin_log(message: Message):
-    await message.reply(await backup())
+    if message.chat.id in admins:
+        await message.reply(await backup())
+    else:
+        with open("assets/rickroll.gif", mode="rb") as rickroll:
+            await message.reply_animation(rickroll)
 
 
 async def backup():
@@ -182,7 +195,8 @@ async def backup():
 
 
 async def on_bot_start(_):
-    asyncio.get_event_loop().create_task(send_mail())
+    asyncio.get_event_loop().create_task(send_mail_task())
+    asyncio.get_event_loop().create_task(everyday_fetch_task())
     await sp.fetch_schedule(current_local_time().weekday())
     await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
 
