@@ -42,7 +42,7 @@ admins = [926132680, 423052299]
 defaultButtons = types.InlineKeyboardMarkup()
 button1 = types.InlineKeyboardButton(i18n.string("menu_today"), callback_data="openToday")
 button2 = types.InlineKeyboardButton(i18n.string("menu_tomorrow"), callback_data="openTomorrow")
-button_dnevnik = types.InlineKeyboardButton(i18n.string("menu_lycreg"), url='https://lycreg.urfu.ru/')
+button_dnevnik = types.InlineKeyboardButton(i18n.string("menu_lycreg"), url="https://lycreg.urfu.ru/")
 defaultButtons.add(button1)
 defaultButtons.add(button2)
 defaultButtons.add(button_dnevnik)
@@ -150,6 +150,10 @@ async def send_mail_task():
         delay = (64800 - (now.hour * 3600 + now.minute * 60 + now.second)) % 86400
         tomorrow = current_local_time() + timedelta(days=1)
         await asyncio.sleep(delay)
+
+        if tomorrow.weekday() == 6:
+            continue
+
         await sp.fetch_schedule(tomorrow.weekday())
         for chat_id in database.joinedChats:
             chat_data = database.get_chat_data(chat_id)
