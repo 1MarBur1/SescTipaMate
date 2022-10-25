@@ -2,8 +2,7 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import timedelta
 
 import aiohttp
 from aiogram import Bot, Dispatcher, executor, types
@@ -17,15 +16,15 @@ from database import database
 from format_data import ScheduleProvider, format_schedule
 from settings_flow import SettingsStateFlow
 from stringi18n import i18n
+from time_utils import current_local_time, everyday_at
 
 TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
 AUTH_TOKEN = ""
-PASTEBIN_AUTH_TOKEN = ""
 
 load_dotenv()
 PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
 if "testing" not in sys.argv:
-    AUTH_TOKEN = os.getenv('AUTH_TOKEN')
+    AUTH_TOKEN = os.getenv("AUTH_TOKEN")
 
 if AUTH_TOKEN != "":
     bot = Bot(token=AUTH_TOKEN, parse_mode=ParseMode.HTML)
@@ -50,10 +49,6 @@ defaultButtons.add(button_dnevnik)
 
 def is_group(chat_id):
     return chat_id < 0
-
-
-def current_local_time():
-    return datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
 
 
 def get_ids_list():
@@ -102,7 +97,7 @@ async def open_menu(message: Message):
 
 @dispatcher.message_handler(commands=["audiences"])
 async def send_audiences(message: Message):
-    with open("assets/images/audiences.png", mode="rb") as image:
+    with open("assets/audiences.png", mode="rb") as image:
         await message.reply_photo(image)
 
 
@@ -136,46 +131,42 @@ async def send_announcement(message: Message):
         if chat_data["mail"]:
             try:
                 await bot.send_message(chat_id, message.text[13:])
-            except BaseException:
+            except exceptions.TelegramAPIError:
                 pass
+    logging.info("Announcement sent")
 
 
+@everyday_at("18:00")
 async def send_mail_task():
     # TODO:
     #   1) Additional mailing in case of schedule changes
-    #   2) Fine time scheduling, not just magic calculations
-    #   3) Mail message welcome
-    while True:
-        now = current_local_time()
-        delay = (64800 - (now.hour * 3600 + now.minute * 60 + now.second)) % 86400
-        tomorrow = current_local_time() + timedelta(days=1)
-        await asyncio.sleep(delay)
+    #   2) Mail message welcome
+    tomorrow = current_local_time() + timedelta(days=1)
 
-        if tomorrow.weekday() == 6:
-            continue
+    if tomorrow.weekday() == 6:
+        return
 
-        await sp.fetch_schedule(tomorrow.weekday())
-        for chat_id in database.joinedChats:
-            chat_data = database.get_chat_data(chat_id)
-            if chat_data["mail"]:
-                try:
-                    await bot.send_message(
-                        chat_id,
-                        format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]), tomorrow.strftime("%d.%m.%Y"))
-                    )
-                except exceptions.TelegramAPIError:
-                    # TODO: Properly handle users which cause exceptions.
-                    #       For example move they down in the list or even delete from mailing.
-                    pass
+    await sp.fetch_schedule(tomorrow.weekday())
+    for chat_id in database.joinedChats:
+        chat_data = database.get_chat_data(chat_id)
+        if chat_data["mail"]:
+            try:
+                await bot.send_message(
+                    chat_id,
+                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
+                                    tomorrow.strftime("%d.%m.%Y"))
+                )
+            except exceptions.TelegramAPIError:
+                # TODO: Properly handle users which cause exceptions.
+                #       For example move they down in the list or even delete from mailing.
+                pass
 
 
+@everyday_at("00:00")
 async def everyday_fetch_task():
-    while True:
-        now = current_local_time()
-        delay = 86405 - (now.hour * 3600 + now.minute * 60 + now.second)
-        await asyncio.sleep(delay)
-        await sp.fetch_schedule(current_local_time().weekday())
-        await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
+    logging.info(f"Everyday schedule fetching. Day {current_local_time().weekday()}")
+    await sp.fetch_schedule(current_local_time().weekday())
+    await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
 
 
 @dispatcher.message_handler(commands=["admin"])
@@ -200,6 +191,7 @@ async def backup():
 
 
 async def on_bot_start(_):
+    logging.info("Starting bot...")
     asyncio.get_event_loop().create_task(send_mail_task())
     asyncio.get_event_loop().create_task(everyday_fetch_task())
     await sp.fetch_schedule(current_local_time().weekday())
@@ -207,13 +199,16 @@ async def on_bot_start(_):
 
 
 async def on_bot_destroy(_):
+    logging.info("Destroying bot...")
+
     message = await backup()
     await bot.send_message(926132680, message)
     await bot.send_message(423052299, message)
 
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format="[%(asctime)s][%(levelname)s][%(name)s]: %(message)s",
+                        datefmt="%d.%m.%y %H:%M:%S")
     # init_i18n()
 
     dialog_registry = DialogRegistry(dispatcher)

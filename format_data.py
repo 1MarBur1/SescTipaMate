@@ -47,8 +47,7 @@ class ScheduleProvider:
 
             for data in await asyncio.gather(*tasks, return_exceptions=True):
                 if isinstance(data, BaseException):
-                    # TODO: logging about broken requests
-                    pass
+                    logging.error(f"Fetching request caused exception: {repr(data)}")
                 else:
                     for les in data["lessons"] + data["diffs"]:
                         del les["uid"], les["weekday"]
