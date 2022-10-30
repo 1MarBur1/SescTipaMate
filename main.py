@@ -193,7 +193,7 @@ async def backup():
 
 async def on_bot_start(_):
     logging.info("Starting bot...")
-    asyncio.get_event_loop().create_task(send_mail_task())
+    #asyncio.get_event_loop().create_task(send_mail_task())
     asyncio.get_event_loop().create_task(everyday_fetch_task())
     await sp.fetch_schedule(current_local_time().weekday())
     await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
