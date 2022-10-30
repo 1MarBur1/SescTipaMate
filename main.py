@@ -126,40 +126,41 @@ async def send_tomorrow(message: Message):
 
 @dispatcher.message_handler(commands=["announcement"])
 async def send_announcement(message: Message):
-    for chat_id in database.joinedChats:
-        chat_data = database.get_chat_data(chat_id)
-        if chat_data["mail"]:
-            try:
-                await bot.send_message(chat_id, message.text[13:])
-            except exceptions.TelegramAPIError:
-                pass
-    logging.info("Announcement sent")
+    if message.chat.id in admins:
+        for chat_id in database.joinedChats:
+            chat_data = database.get_chat_data(chat_id)
+            if chat_data["mail"]:
+                try:
+                    await bot.send_message(chat_id, message.text[13:])
+                except exceptions.TelegramAPIError:
+                    pass
+        logging.info("Announcement sent")
 
 
-@everyday_at("18:00")
-async def send_mail_task():
-    # TODO:
-    #   1) Additional mailing in case of schedule changes
-    #   2) Mail message welcome
-    tomorrow = current_local_time() + timedelta(days=1)
+#@everyday_at("18:00")
+#async def send_mail_task():
+#    # TODO:
+#    #   1) Additional mailing in case of schedule changes
+#    #   2) Mail message welcome
+#    tomorrow = current_local_time() + timedelta(days=1)
 
-    if tomorrow.weekday() == 6:
-        return
+#    if tomorrow.weekday() == 6:
+#        return
 
-    await sp.fetch_schedule(tomorrow.weekday())
-    for chat_id in database.joinedChats:
-        chat_data = database.get_chat_data(chat_id)
-        if chat_data["mail"]:
-            try:
-                await bot.send_message(
-                    chat_id,
-                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
-                                    tomorrow.strftime("%d.%m.%Y"))
-                )
-            except exceptions.TelegramAPIError:
-                # TODO: Properly handle users which cause exceptions.
-                #       For example move they down in the list or even delete from mailing.
-                pass
+#    await sp.fetch_schedule(tomorrow.weekday())
+#    for chat_id in database.joinedChats:
+#        chat_data = database.get_chat_data(chat_id)
+#        if chat_data["mail"]:
+#            try:
+#                await bot.send_message(
+#                    chat_id,
+#                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
+#                                    tomorrow.strftime("%d.%m.%Y"))
+#                )
+#            except exceptions.TelegramAPIError:
+#                # TODO: Properly handle users which cause exceptions.
+#                #       For example move they down in the list or even delete from mailing.
+#                pass
 
 
 @everyday_at("00:00")
