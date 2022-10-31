@@ -24,7 +24,7 @@ groups_inverse = {
 
 class ScheduleProvider:
     def __init__(self):
-        self.__schedule = {i: {} for i in range(7)}
+        self.schedule = {i: {} for i in range(7)}
 
     @staticmethod
     async def fetch_one(session, url):
@@ -33,7 +33,7 @@ class ScheduleProvider:
 
     async def fetch_schedule(self, day):
         # TODO: check schedule diffs compared to previous version
-        self.__schedule[day] = {
+        self.schedule[day] = {
             "teachers": defaultdict(lambda: []),
             "audiences": defaultdict(lambda: []),
             "groups": defaultdict(lambda: [])
@@ -49,26 +49,27 @@ class ScheduleProvider:
             for data in await asyncio.gather(*tasks, return_exceptions=True):
                 if isinstance(data, BaseException):
                     logging.error(f"Fetching request caused exception: {repr(data)}")
-                else:
-                    for les in data["lessons"] + data["diffs"]:
-                        del les["uid"], les["weekday"]
-                        aud = les.pop("auditory")
-                        lesson = {**les, "audience": aud}
+                    continue
 
-                        self.__schedule[day]["teachers"][les["teacher"]].append(lesson)
-                        self.__schedule[day]["audiences"][aud].append(lesson)
-                        self.__schedule[day]["groups"][id_by_group_name(les["group"])].append(lesson)
-                    success_count += 1
+                for les in data["lessons"] + data["diffs"]:
+                    del les["uid"], les["weekday"]
+                    aud = les.pop("auditory")
+                    lesson = {**les, "audience": aud}
+
+                    self.schedule[day]["teachers"][les["teacher"]].append(lesson)
+                    self.schedule[day]["audiences"][aud].append(lesson)
+                    self.schedule[day]["groups"][id_by_group_name(les["group"])].append(lesson)
+                success_count += 1
             logging.info(f"Fetched schedule for {success_count}/{len(groups)} groups (weekday: {day})")
 
     def for_group(self, day, group):
-        return self.__schedule[day]["groups"][group]
+        return self.schedule[day]["groups"][group]
 
     def for_audience(self, day, audience):
-        return self.__schedule[day]["audiences"][audience]
+        return self.schedule[day]["audiences"][audience]
 
     def for_teacher(self, day, teacher):
-        return self.__schedule[day]["teachers"][teacher]
+        return self.schedule[day]["teachers"][teacher]
 
 
 def format_schedule(schedule, date):

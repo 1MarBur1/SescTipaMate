@@ -21,14 +21,12 @@ from i18n_provider import i18n
 from time_utils import current_local_time, everyday_at
 
 load_dotenv()
-
-TEST_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
-AUTH_TOKEN = None
-if "testing" not in sys.argv:
-    AUTH_TOKEN = os.getenv("AUTH_TOKEN")
 PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
 
-bot = Bot(token=AUTH_TOKEN if AUTH_TOKEN is not None else TEST_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(
+    token=os.getenv("AUTH_TOKEN" if "testing" not in sys.argv else "TEST_TOKEN"),
+    parse_mode=ParseMode.HTML
+)
 
 # TODO: Redis storage
 storage = MemoryStorage()
@@ -137,7 +135,7 @@ async def send_announcement(message: Message):
         logging.info("Announcement sent")
 
 
-@everyday_at("17:07")
+@everyday_at("18:00")
 async def send_mail_task():
     # TODO:
     #   1) Additional mailing in case of schedule changes
@@ -152,21 +150,20 @@ async def send_mail_task():
 
     await sp.fetch_schedule(tomorrow.weekday())
 
-    success_count = 0
+    tasks = []
     for chat_id in database.joinedChats:
         chat_data = database.get_chat_data(chat_id)
         if chat_data["mail"]:
-            try:
-                await bot.send_message(
-                    chat_id,
-                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
-                                    tomorrow.strftime("%d.%m.%Y"))
-                )
-                success_count += 1
-            except exceptions.TelegramAPIError:
-                # TODO: Properly handle users which cause exceptions.
-                #       For example move they down in the list or even delete from mailing.
-                pass
+            tasks.append(asyncio.ensure_future(
+                bot.send_message(chat_id, format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
+                                                          tomorrow.strftime("%d.%m.%Y")))
+            ))
+
+    success_count = 0
+    for result in await asyncio.gather(*tasks, return_exceptions=True):
+        if isinstance(result, exceptions.TelegramAPIError):
+            continue
+        success_count += 1
 
     end_time = time.time()
     logging.info(f"Done in {end_time - start_time}s. Sent to {success_count}/{len(database.joinedChats)} users")
