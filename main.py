@@ -3,33 +3,32 @@ import logging
 import os
 import sys
 from datetime import timedelta
+import time
 
 import aiohttp
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, executor
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode, Message
 from aiogram.utils import exceptions
-from aiogram_dialog import Dialog, DialogRegistry, DialogManager, StartMode
+from aiogram_dialog import DialogManager, StartMode
 from dotenv import load_dotenv
 
 from database import database
+from dialogs import init_dialogs
 from format_data import ScheduleProvider, format_schedule
-from settings_flow import SettingsStateFlow
-from stringi18n import i18n
+from settings_flow import SettingsStates
+from i18n_provider import i18n
 from time_utils import current_local_time, everyday_at
 
-TEST_BOT_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
-AUTH_TOKEN = ""
-
 load_dotenv()
-PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
+
+TEST_TOKEN = "5445774855:AAEuTHh7w5Byc1Pi2yxMupXE3xkc1o7e5J0"
+AUTH_TOKEN = None
 if "testing" not in sys.argv:
     AUTH_TOKEN = os.getenv("AUTH_TOKEN")
+PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
 
-if AUTH_TOKEN != "":
-    bot = Bot(token=AUTH_TOKEN, parse_mode=ParseMode.HTML)
-else:
-    bot = Bot(token=TEST_BOT_TOKEN, parse_mode=ParseMode.HTML)
+bot = Bot(token=AUTH_TOKEN if AUTH_TOKEN is not None else TEST_TOKEN, parse_mode=ParseMode.HTML)
 
 # TODO: Redis storage
 storage = MemoryStorage()
@@ -37,14 +36,6 @@ dispatcher = Dispatcher(bot, storage=storage)
 sp = ScheduleProvider()
 
 admins = [926132680, 423052299]
-
-defaultButtons = types.InlineKeyboardMarkup()
-button1 = types.InlineKeyboardButton(i18n.string("menu_today"), callback_data="openToday")
-button2 = types.InlineKeyboardButton(i18n.string("menu_tomorrow"), callback_data="openTomorrow")
-button_dnevnik = types.InlineKeyboardButton(i18n.string("menu_lycreg"), url="https://lycreg.urfu.ru/")
-defaultButtons.add(button1)
-defaultButtons.add(button2)
-defaultButtons.add(button_dnevnik)
 
 
 def is_group(chat_id):
@@ -83,13 +74,22 @@ async def send_help(message: Message):
 
 @dispatcher.message_handler(commands=["settings"])
 async def manage_settings(message: Message, dialog_manager: DialogManager):
-    await dialog_manager.start(SettingsStateFlow.main_state, mode=StartMode.RESET_STACK)
+    await dialog_manager.start(SettingsStates.main_state, mode=StartMode.RESET_STACK)
     await message.delete()
 
 
 @dispatcher.message_handler(commands=["menu"])
 async def open_menu(message: Message):
     # TODO: create menu with aiogram_dialog
+
+    # defaultButtons = types.InlineKeyboardMarkup()
+    # button1 = types.InlineKeyboardButton(i18n.string("menu_today"), callback_data="openToday")
+    # button2 = types.InlineKeyboardButton(i18n.string("menu_tomorrow"), callback_data="openTomorrow")
+    # button_dnevnik = types.InlineKeyboardButton(i18n.string("menu_lycreg"), url="https://lycreg.urfu.ru/")
+    # defaultButtons.add(button1)
+    # defaultButtons.add(button2)
+    # defaultButtons.add(button_dnevnik)
+
     # await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
     #                        reply_markup=defaultButtons)
     await message.reply("Nothing here yet...")
@@ -137,37 +137,51 @@ async def send_announcement(message: Message):
         logging.info("Announcement sent")
 
 
-#@everyday_at("18:00")
-#async def send_mail_task():
-#    # TODO:
-#    #   1) Additional mailing in case of schedule changes
-#    #   2) Mail message welcome
-#    tomorrow = current_local_time() + timedelta(days=1)
+@everyday_at("17:07")
+async def send_mail_task():
+    # TODO:
+    #   1) Additional mailing in case of schedule changes
+    #   2) Mail message welcome
+    tomorrow = current_local_time() + timedelta(days=1)
 
-#    if tomorrow.weekday() == 6:
-#        return
+    if tomorrow.weekday() == 6:
+        return
 
-#    await sp.fetch_schedule(tomorrow.weekday())
-#    for chat_id in database.joinedChats:
-#        chat_data = database.get_chat_data(chat_id)
-#        if chat_data["mail"]:
-#            try:
-#                await bot.send_message(
-#                    chat_id,
-#                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
-#                                    tomorrow.strftime("%d.%m.%Y"))
-#                )
-#            except exceptions.TelegramAPIError:
-#                # TODO: Properly handle users which cause exceptions.
-#                #       For example move they down in the list or even delete from mailing.
-#                pass
+    logging.info(f"Ready to send everyday mailing")
+    start_time = time.time()
+
+    await sp.fetch_schedule(tomorrow.weekday())
+
+    success_count = 0
+    for chat_id in database.joinedChats:
+        chat_data = database.get_chat_data(chat_id)
+        if chat_data["mail"]:
+            try:
+                await bot.send_message(
+                    chat_id,
+                    format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
+                                    tomorrow.strftime("%d.%m.%Y"))
+                )
+                success_count += 1
+            except exceptions.TelegramAPIError:
+                # TODO: Properly handle users which cause exceptions.
+                #       For example move they down in the list or even delete from mailing.
+                pass
+
+    end_time = time.time()
+    logging.info(f"Done in {end_time - start_time}s. Sent to {success_count}/{len(database.joinedChats)} users")
 
 
 @everyday_at("00:00")
 async def everyday_fetch_task():
-    logging.info(f"Everyday schedule fetching. Day {current_local_time().weekday()}")
+    logging.info(f"Ready to start everyday sync")
+    start_time = time.time()
+
     await sp.fetch_schedule(current_local_time().weekday())
     await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
+
+    end_time = time.time()
+    logging.info(f"Done in {end_time - start_time}s")
 
 
 @dispatcher.message_handler(commands=["admin"])
@@ -193,8 +207,13 @@ async def backup():
 
 async def on_bot_start(_):
     logging.info("Starting bot...")
-    #asyncio.get_event_loop().create_task(send_mail_task())
+
+    i18n.load_lang("ru")
+    init_dialogs(dispatcher)
+
+    # asyncio.get_event_loop().create_task(send_mail_task())
     asyncio.get_event_loop().create_task(everyday_fetch_task())
+
     await sp.fetch_schedule(current_local_time().weekday())
     await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
 
@@ -210,12 +229,6 @@ async def on_bot_destroy(_):
 def main():
     logging.basicConfig(level=logging.INFO, format="[%(asctime)s][%(levelname)s][%(name)s]: %(message)s",
                         datefmt="%d.%m.%y %H:%M:%S")
-    # init_i18n()
-
-    dialog_registry = DialogRegistry(dispatcher)
-    dialog = Dialog(SettingsStateFlow.main_window, SettingsStateFlow.group_window)
-    dialog.on_start = SettingsStateFlow.on_start
-    dialog_registry.register(dialog)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
