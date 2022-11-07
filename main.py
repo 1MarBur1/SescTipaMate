@@ -135,7 +135,7 @@ async def send_announcement(message: Message):
         logging.info("Announcement sent")
 
 
-@everyday_at("18:00")
+@everyday_at("18:45")
 async def send_mail_task():
     # TODO:
     #   1) Additional mailing in case of schedule changes
@@ -208,7 +208,7 @@ async def on_bot_start(_):
     i18n.load_lang("ru")
     init_dialogs(dispatcher)
 
-    # asyncio.get_event_loop().create_task(send_mail_task())
+    asyncio.get_event_loop().create_task(send_mail_task())
     asyncio.get_event_loop().create_task(everyday_fetch_task())
 
     await sp.fetch_schedule(current_local_time().weekday())
