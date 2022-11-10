@@ -135,7 +135,7 @@ async def send_announcement(message: Message):
         logging.info("Announcement sent")
 
 
-@everyday_at("18:45")
+@everyday_at("18:00")
 async def send_mail_task():
     # TODO:
     #   1) Additional mailing in case of schedule changes
