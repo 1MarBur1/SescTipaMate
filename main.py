@@ -103,9 +103,15 @@ async def send_schedule_for_day(message: Message, date):
     chat_id = message.chat.id
     if database.has_chat(chat_id):
         chat_data = database.get_chat_data(chat_id)
-        if chat_data["group"] != 0:
+
+        if len(message.text.split(' ')) == 1:
+            group_id = chat_data["group"]
+        else:
+            group_id = message.text.split(' ')[1]
+
+        if group_id != 0:
             await message.reply(
-                format_schedule(sp.for_group(date.weekday(), chat_data["group"]), date.strftime("%d.%m.%Y")))
+                format_schedule(sp.for_group(date.weekday(), group_id), date.strftime("%d.%m.%Y")))
         else:
             await message.reply(i18n.string("unselected_group"))
     else:
