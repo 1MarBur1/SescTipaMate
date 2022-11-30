@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -91,9 +93,14 @@ class LessonPool:
         def __init__(self, pool):
             self.pool = pool
             self.group_iter = iter(pool.by_group)
-            self.lesson_iter = iter(pool.by_group[next(self.group_iter)])
+            try:
+                self.lesson_iter = iter(pool.by_group[next(self.group_iter)])
+            except StopIteration:
+                self.lesson_iter = None
 
         def __next__(self):
+            if self.lesson_iter is None:
+                raise StopIteration
             try:
                 return next(self.lesson_iter)
             except StopIteration:
@@ -104,18 +111,19 @@ class LessonPool:
         return LessonPool.Iterator(self)
 
 
+@dataclass
+class SyncReport:
+    cached: bool
+    added: LessonPool | None
+    removed: LessonPool | None
+
+
 class ScheduleDay(LessonPool):
     def __init__(self, weekday: int):
         super().__init__()
 
         self.weekday = weekday
         self.sync_hash = defaultdict(str)
-
-    @dataclass
-    class SyncReport:
-        cached: bool
-        added: LessonPool | None
-        removed: LessonPool | None
 
     async def __sync_group(self, group, session: aiohttp.ClientSession) -> SyncReport:
         url = f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={self.weekday + 1}&group={group}"
@@ -124,7 +132,7 @@ class ScheduleDay(LessonPool):
 
         hash_ = md5(data.encode()).hexdigest()
         if self.sync_hash[group] == hash_:
-            return self.SyncReport(cached=True, added=None, removed=None)
+            return SyncReport(cached=True, added=None, removed=None)
 
         self.sync_hash[group] = hash_
         data = json.loads(data)
@@ -148,16 +156,19 @@ class ScheduleDay(LessonPool):
                 to_add.remove(lesson)
             else:
                 to_remove.add(lesson)
-                self.remove(lesson)
 
         for lesson in to_add:
             self.add(lesson)
 
-        return self.SyncReport(cached=False, added=to_add, removed=to_remove)
+        for lesson in to_remove:
+            self.remove(lesson)
+
+        return SyncReport(cached=False, added=to_add, removed=to_remove)
 
     async def sync(self):
         count = {"synced": 0, "cached": 0, "errored": 0}
         diffs_added, diffs_removed = LessonPool(), LessonPool()
+
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             for result in await asyncio.gather(
                     *[self.__sync_group(group, session) for group in groups]):
@@ -171,7 +182,7 @@ class ScheduleDay(LessonPool):
                     diffs_added.merge(result.added)
                     diffs_removed.merge(result.removed)
 
-        logging.info(f"Day syncing had done (weekday: {self.weekday}, synced: {count['synced']}, "
+        logging.info(f"Day syncing has been done (weekday: {self.weekday}, synced: {count['synced']}, "
                      f"cached: {count['cached']}, errored: {count['errored']})")
 
         return diffs_added, diffs_removed

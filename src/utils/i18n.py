@@ -39,7 +39,7 @@ class I18nProvider:
         self.current_lang = "ru"
 
     def load_lang(self, lang):
-        with open(f"{lang}.json", encoding="utf-8") as file:
+        with open(f"../assets/{lang}.json", encoding="utf-8") as file:
             self.messages[lang] = json.loads(file.read())
 
 
