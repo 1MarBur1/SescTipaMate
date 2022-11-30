@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import sys
+from asyncio import Task
 from datetime import timedelta
 import time
 
@@ -13,12 +14,13 @@ from aiogram.utils import exceptions
 from aiogram_dialog import DialogManager, StartMode
 from dotenv import load_dotenv
 
-from database import database
-from dialogs import init_dialogs
-from format_data import ScheduleProvider, format_schedule
-from settings_flow import SettingsStates
-from i18n_provider import i18n
-from time_utils import current_local_time, everyday_at
+from src.data.chats import database
+from src.dialogs.registry import init_dialogs
+from src.data.schedule import ScheduleProvider
+from src.dialogs.settings import SettingsStates
+from src.utils.formatting import format_schedule, format_diffs
+from src.utils.i18n import i18n
+from src.utils.time import current_local_time, everyday_at, every
 
 load_dotenv()
 PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
@@ -32,8 +34,13 @@ bot = Bot(
 storage = MemoryStorage()
 dispatcher = Dispatcher(bot, storage=storage)
 sp = ScheduleProvider()
+diff_task: Task
 
-admins = [926132680, 423052299]
+# TODO: put admins to .env
+admins = [
+    926132680,
+    423052299
+]
 
 
 def is_group(chat_id):
@@ -95,7 +102,7 @@ async def open_menu(message: Message):
 
 @dispatcher.message_handler(commands=["audiences"])
 async def send_audiences(message: Message):
-    with open("assets/audiences.png", mode="rb") as image:
+    with open("../assets/audiences.png", mode="rb") as image:
         await message.reply_photo(image)
 
 
@@ -141,12 +148,10 @@ async def send_announcement(message: Message):
         logging.info("Announcement sent")
 
 
-@everyday_at("18:00")
+@everyday_at("16:00")
 async def send_mail_task():
-    # TODO:
-    #   1) Additional mailing in case of schedule changes
-    #   2) Mail message welcome
-    tomorrow = current_local_time() + timedelta(days=1)
+    # TODO: Mail message welcome
+    tomorrow = current_local_time() + timedelta(days=2)
 
     if tomorrow.weekday() == 6:
         return
@@ -154,14 +159,14 @@ async def send_mail_task():
     logging.info(f"Ready to send everyday mailing")
     start_time = time.time()
 
-    await sp.fetch_schedule(tomorrow.weekday())
+    await sp.sync_day(tomorrow.weekday())
 
     tasks = []
     for chat_id in database.joinedChats:
         chat_data = database.get_chat_data(chat_id)
         if chat_data["mail"]:
             tasks.append(asyncio.ensure_future(
-                bot.send_message(chat_id, format_schedule(sp.for_group(tomorrow.weekday(), chat_data["group"]),
+                bot.send_message(chat_id, format_schedule(sp.for_group(chat_data["group"], tomorrow.weekday()),
                                                           tomorrow.strftime("%d.%m.%Y")))
             ))
 
@@ -174,14 +179,40 @@ async def send_mail_task():
     end_time = time.time()
     logging.info(f"Done in {end_time - start_time}s. Sent to {success_count}/{len(database.joinedChats)} users")
 
+    global diff_task
+    diff_task = asyncio.create_task(check_diff_task())
+
+
+@every(timedelta(minutes=1))
+async def check_diff_task():
+    diffs = await sp.sync_day(current_local_time().weekday())
+    now = current_local_time()
+    tasks = []
+    for chat_id in database.joinedChats:
+        chat_data = database.get_chat_data(chat_id)
+        if chat_data["group"] in diffs and chat_data["mail"]:
+            tasks.append(asyncio.ensure_future(
+                bot.send_message(chat_id, format_diffs(..., ...))
+            ))
+
+    await asyncio.gather(*tasks, return_exceptions=True)
+
+
+@everyday_at("9:00")
+async def stop_diff_task():
+    global diff_task
+    if diff_task:
+        diff_task.cancel()
+        diff_task = None
+
 
 @everyday_at("00:00")
 async def everyday_fetch_task():
     logging.info(f"Ready to start everyday sync")
     start_time = time.time()
 
-    await sp.fetch_schedule(current_local_time().weekday())
-    await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
+    await sp.sync_day(current_local_time().weekday())
+    await sp.sync_day((current_local_time() + timedelta(days=1)).weekday())
 
     end_time = time.time()
     logging.info(f"Done in {end_time - start_time}s")
@@ -192,7 +223,7 @@ async def send_admin_log(message: Message):
     if message.chat.id in admins:
         await message.reply(await backup())
     else:
-        with open("assets/rickroll.gif", mode="rb") as rickroll:
+        with open("../assets/rickroll.gif", mode="rb") as rickroll:
             await message.reply_animation(rickroll)
 
 
@@ -217,8 +248,8 @@ async def on_bot_start(_):
     asyncio.get_event_loop().create_task(send_mail_task())
     asyncio.get_event_loop().create_task(everyday_fetch_task())
 
-    await sp.fetch_schedule(current_local_time().weekday())
-    await sp.fetch_schedule((current_local_time() + timedelta(days=1)).weekday())
+    await sp.sync_day(current_local_time().weekday())
+    await sp.sync_day((current_local_time() + timedelta(days=1)).weekday())
 
 
 async def on_bot_destroy(_):

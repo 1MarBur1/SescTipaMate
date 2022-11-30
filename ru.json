@@ -8,6 +8,7 @@
   "unregistered_chat": "Для начала тебе нужно зарегистрироваться с помощью /start",
 
   "mail_schedule_header": "Расписание на <b>{date}</b>:",
+  "mail_diff_header": "Изменения на <b>{date}</b>",
   "mail_no_schedule": "На <b>{date}</b> не запланировано никаких уроков =(",
   "mail_weekend": "{data} выходной! Ура!",
 
