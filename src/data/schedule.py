@@ -184,8 +184,9 @@ class ScheduleDay(LessonPool):
                     diffs_added.merge(result.added)
                     diffs_removed.merge(result.removed)
 
-        logging.info(f"Day syncing has been done (weekday: {self.weekday}, synced: {count['synced']}, "
-                     f"cached: {count['cached']}, errored: {count['errored']})")
+        # We don't want to litter log
+        # logging.info(f"Day syncing has been done (weekday: {self.weekday}, synced: {count['synced']}, "
+        #              f"cached: {count['cached']}, errored: {count['errored']})")
 
         return diffs_added, diffs_removed
 
