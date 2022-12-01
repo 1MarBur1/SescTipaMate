@@ -42,17 +42,18 @@ def group_name_exists(group_name):
 @dataclass(eq=True, frozen=True)
 class Lesson:
     subject: str
-    auditory: int
+    auditory: str
     group: int
     subgroup: int
     teacher: str
     number: int
+    is_diff: bool
 
     @staticmethod
-    def from_json(d):
+    def from_json(d, is_diff=False):
         try:
             return Lesson(d["subject"], d["auditory"], id_by_group_name(d["group"]),
-                          d["subgroup"], d["teacher"], d["number"])
+                          d["subgroup"], d["teacher"], d["number"], is_diff)
         except KeyError:
             raise ValueError("Missed required lesson parameters")
 
@@ -73,9 +74,6 @@ class LessonPool:
         self.by_teacher[lesson.teacher].remove(lesson)
         self.by_auditory[lesson.auditory].remove(lesson)
 
-    def has(self, lesson: Lesson):
-        return lesson in self.by_group[lesson.group]
-
     def for_group(self, group):
         return self.by_group[group]
 
@@ -89,6 +87,9 @@ class LessonPool:
         for lesson in other_pool:
             self.add(lesson)
 
+    def __contains__(self, lesson):
+        return lesson in self.by_group[lesson.group]
+
     class Iterator:
         def __init__(self, pool):
             self.pool = pool
@@ -101,11 +102,12 @@ class LessonPool:
         def __next__(self):
             if self.lesson_iter is None:
                 raise StopIteration
-            try:
-                return next(self.lesson_iter)
-            except StopIteration:
-                self.lesson_iter = iter(self.pool.by_group[next(self.group_iter)])
-                return next(self.lesson_iter)
+
+            while True:
+                try:
+                    return next(self.lesson_iter)
+                except StopIteration:
+                    self.lesson_iter = iter(self.pool.by_group[next(self.group_iter)])
 
     def __iter__(self):
         return LessonPool.Iterator(self)
@@ -142,7 +144,7 @@ class ScheduleDay(LessonPool):
         to_remove = LessonPool()
 
         for entry in data["diffs"]:
-            lesson = Lesson.from_json(entry)
+            lesson = Lesson.from_json(entry, is_diff=True)
             diffed.add(lesson.number)
             to_add.add(lesson)
 
@@ -152,7 +154,7 @@ class ScheduleDay(LessonPool):
                 to_add.add(lesson)
 
         for lesson in self:
-            if to_add.has(lesson):
+            if lesson in to_add:
                 to_add.remove(lesson)
             else:
                 to_remove.add(lesson)
@@ -171,7 +173,7 @@ class ScheduleDay(LessonPool):
 
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             for result in await asyncio.gather(
-                    *[self.__sync_group(group, session) for group in groups]):
+                    *[self.__sync_group(group, session) for group in groups], return_exceptions=True):
                 if isinstance(result, BaseException):
                     count["errored"] += 1
                     logging.error(f"Sync exception: {repr(result)}")

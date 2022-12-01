@@ -3,28 +3,49 @@ from src.utils.i18n import i18n
 lessons_time = ("9:00-9:40", "9:50-10:30", "10:45-11:25", "11:40-12:20", "12:35-13:15", "13:35-14:15", "14:35-15:15")
 
 
-def format_schedule(schedule, date):
-    formatted = [""] * 7
-    if not schedule:
-        return i18n.string("mail_no_schedule", date=date)
-    for lesson in schedule:
-        entry = f'    {lesson.subject}'
-        if lesson.auditory:
-            entry += f' <i>[{lesson.auditory}]</i>'
-        if lesson.teacher:
-            entry += f' - <i>{lesson.teacher}</i>'
-        formatted[lesson.number - 1] += entry + "\n"
-    result = i18n.string("mail_schedule_header", date=date) + "\n"
-    for i in range(7):
-        if not formatted[i]:
-            formatted[i] = "    [<i>нет</i>]\n"
-        result += f"<b>{i + 1}. {lessons_time[i]}</b>\n"
-        result += f"{formatted[i]}"
+def format_lesson(lesson):
+    result = lesson.subject
+    if lesson.auditory:
+        result += f" <i>[{lesson.auditory}]</i>"
+    if lesson.teacher:
+        result += f" - <i>{lesson.teacher}</i>"
     return result
 
 
-def format_diffs():
-    ...
+def format_timetable(lessons):
+    result = ""
+    for i in range(7):
+        if not lessons[i]:
+            lessons[i] = "    [<i>нет</i>]\n"
+        result += f"<b>{i + 1}. {lessons_time[i]}</b>\n"
+        result += lessons[i]
+    return result
+
+
+def format_schedule(schedule, date):
+    lessons = [""] * 7
+    if not schedule:
+        return i18n.string("mail_no_schedule", date=date)
+    for lesson in schedule:
+        if lesson.is_diff:
+            lessons[lesson.number - 1] += f"    * {format_lesson(lesson)}\n"
+        else:
+            lessons[lesson.number - 1] += f"    {format_lesson(lesson)}\n"
+
+    return i18n.string("mail_schedule_header", date=date) + "\n" + format_timetable(lessons)
+
+
+def format_diffs(schedule, added, removed, date):
+    lessons = [""] * 7
+    for lesson in schedule:
+        if lesson in added:
+            lessons[lesson.number - 1] += f"    <b>+ {format_lesson(lesson)}</b>\n"
+        else:
+            lessons[lesson.number - 1] += f"    {format_lesson(lesson)}\n"
+    for lesson in removed:
+        lessons[lesson.number - 1] += f"    − <s>{format_lesson(lesson)}</s>\n"
+
+    return i18n.string("mail_diff_header", date=date) + "\n" + format_timetable(lessons)
 
 
 def format_backup():
