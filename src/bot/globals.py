@@ -79,9 +79,9 @@ async def on_bot_start(_):
 async def on_bot_destroy(_):
     logging.info("Destroying bot...")
 
-    # message = await backup()
-    # await bot.send_message(926132680, message)
-    # await bot.send_message(423052299, message)
+    message = await backup()
+    await bot.send_message(926132680, message)
+    await bot.send_message(423052299, message)
 
 
 def launch_bot():

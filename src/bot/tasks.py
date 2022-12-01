@@ -6,7 +6,6 @@ from datetime import timedelta
 from aiogram.utils import exceptions
 
 from src.data.chats import database
-from src.data.schedule import Lesson
 from src.utils.formatting import format_diffs, format_schedule
 from src.utils.time import everyday_at, current_local_time, every
 from src.bot.globals import bot, schedule
@@ -53,11 +52,8 @@ async def mail_task():
 
     logging.info("Checking for diffs started...")
 
-    # schedule.week[tomorrow.weekday()].by_group = {Lesson("Math", "310", 32, -1, "Dingol", 1, is_diff=True)}
-    # schedule.week[tomorrow.weekday()].sync_hash[32] = ""
 
-
-@every(timedelta(minutes=1))
+@every(timedelta(minutes=5))
 async def check_diff_task():
     diffs_added, diffs_removed = await schedule.sync_day(diff_day[0])
     tasks = []

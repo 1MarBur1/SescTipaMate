@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import traceback
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -153,7 +154,7 @@ class ScheduleDay(LessonPool):
             if lesson.number not in diffed:
                 to_add.add(lesson)
 
-        for lesson in self:
+        for lesson in self.for_group(group):
             if lesson in to_add:
                 to_add.remove(lesson)
             else:
@@ -176,7 +177,11 @@ class ScheduleDay(LessonPool):
                     *[self.__sync_group(group, session) for group in groups], return_exceptions=True):
                 if isinstance(result, BaseException):
                     count["errored"] += 1
-                    logging.error(f"Sync exception: {repr(result)}")
+                    logging.error(f"Sync exception:")
+
+                    # backward compatibility for 3.9
+                    # https://docs.python.org/3/library/traceback.html#traceback.print_exception
+                    traceback.print_exception(..., result, result.__traceback__)
                 elif result.cached:
                     count["cached"] += 1
                 else:
