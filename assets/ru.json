@@ -1,0 +1,34 @@
+{
+  "help": "/start - регистрирует тебя в боте\n/settings - открывает меню настроек\n/today - отправляет расписание на сегодня\n/tomorrow - отправляет расписание на завтра\n/audiences - список, где находятся аудитории",
+  "welcome": "\uD83D\uDD25 Привет, <b>{name}</b>! \uD83D\uDD25\nЕсли ты учишься в СУНЦ УрФУ, то тебе нужно всегда быть в курсе расписания, и теперь я буду помогать с этим =)\nНо сначала напиши свой класс с помощью /settings",
+
+  "user_already_registered": "Друг, ты уже зарегестрирован и можешь пользоваться ботом!",
+  "group_already_registered": "Эта группа уже зарегестрирована! Если ты хочешь добавить себя это нужно сделать в личных сообщениях",
+  "unselected_group": "Сначала выбери свой класс, с помощью /settings",
+  "unregistered_chat": "Для начала тебе нужно зарегистрироваться с помощью /start",
+
+  "mail_schedule_header": "Расписание на <b>{date}</b>:",
+  "mail_diff_header": "Изменения на <b>{date}</b>",
+  "mail_no_schedule": "На <b>{date}</b> не запланировано никаких уроков =(",
+  "mail_weekend": "{data} выходной! Ура!",
+
+  "menu_welcome": "Привет, {name}! Ты в самой невероятной менюшке этого города",
+  "menu_today": "Расписание на сегодня",
+  "menu_tomorrow": "Расписание на завтра",
+  "menu_lycreg": "Открыть эл. дневник",
+
+  "empty_group": ["undefined", "minecraft:air", "null", "None", "\uD83D\uDC4D"],
+  "settings_header": "<b>Настройки</b>\nЗдесь можно изменить конфигурацию бота",
+  "settings_group_header": "<b>Настройки → Класс\nТекущий класс</b>: {group}\n\nДля выбора класса отправь его в формате '12Я'\n⚠ <i>Старый класс заменится на новый</i>",
+  "settings_group": "Класс: {group}",
+  "settings_group_set": "Класс установлен: <b>{before} → {after}</b>",
+  "settings_group_unknown": "Неизвестный класс",
+  "settings_group_already_set": "Этот класс уже выбран",
+  "settings_mail": "Рассылка",
+  "settings_pin": "Закрепление рассылки",
+  "settings_news": "Уведомления об обновлениях",
+  "settings_done": "Готово ↩",
+
+  "you_are_not_admin": "У тебя нет админки =/\nЗа ней обращайся к @xmarburx",
+  "accounts_amount": "Сейчас в боте {amount} аккаунтов:\n"
+}
