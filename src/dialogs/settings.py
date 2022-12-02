@@ -6,10 +6,10 @@ from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import *
 from aiogram_dialog.widgets.text import Const, Format
 
-from database import database
-from dialogs import register_dialog
-from format_data import group_name_by_id, id_by_group_name, group_name_exists
-from i18n_provider import i18n
+from src.data.chats import database
+from src.dialogs.registry import register_dialog
+from src.data.schedule import group_name_by_id, id_by_group_name, group_name_exists
+from src.utils.i18n import i18n
 
 
 # TODO:

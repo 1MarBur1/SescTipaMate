@@ -5,8 +5,24 @@ from zoneinfo import ZoneInfo
 from functools import wraps
 
 
+TIME_ZONE = ZoneInfo("Asia/Yekaterinburg")
+
+
 def current_local_time():
-    return datetime.now(tz=ZoneInfo("Asia/Yekaterinburg"))
+    return datetime.now(tz=TIME_ZONE)
+
+
+def every(interval):
+    def __task_decorator(task_func):
+
+        @wraps(task_func)
+        async def __decorated_task():
+            while True:
+                await asyncio.sleep(interval.total_seconds())
+                await task_func()
+
+        return __decorated_task
+    return __task_decorator
 
 
 def everyday_at(time_repr: str):
