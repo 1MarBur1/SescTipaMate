@@ -32,14 +32,14 @@ def format_timetable(lessons):
 
 def format_schedule(schedule, date):
     if not schedule:
-        return i18n.string("mail_no_schedule", date=date)
+        return i18n.string("mail.no_schedule", date=date)
 
     lessons = [""] * 7
     for lesson in schedule:
         pattern = LessonPattern.DIFF if lesson.is_diff else LessonPattern.COMMON
         lessons[lesson.number - 1] += format_lesson(lesson, pattern)
 
-    return i18n.string("mail_schedule_header", date=date) + "\n" + format_timetable(lessons)
+    return i18n.string("mail.schedule_header", date=date) + "\n" + format_timetable(lessons)
 
 
 def format_diffs(schedule, added, removed, date):
@@ -50,7 +50,7 @@ def format_diffs(schedule, added, removed, date):
     for lesson in removed:
         lessons[lesson.number - 1] += format_lesson(lesson, pattern=LessonPattern.REMOVED)
 
-    return i18n.string("mail_diff_header", date=date) + "\n" + format_timetable(lessons)
+    return i18n.string("mail.diff_header", date=date) + "\n" + format_timetable(lessons)
 
 
 def format_backup():

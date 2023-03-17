@@ -4,7 +4,7 @@ import asyncio
 import json
 import logging
 import traceback
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 
 import aiohttp
@@ -114,11 +114,8 @@ class LessonPool:
         return LessonPool.Iterator(self)
 
 
-@dataclass
-class SyncReport:
-    cached: bool
-    added: LessonPool | None
-    removed: LessonPool | None
+SyncReport = namedtuple("SyncReport", ["cached", "added", "removed"])
+SyncStats = namedtuple("SyncStats", ["synced", "cached", "errored"], defaults=(0, 0, 0))
 
 
 class ScheduleDay(LessonPool):
@@ -169,27 +166,32 @@ class ScheduleDay(LessonPool):
         return SyncReport(cached=False, added=to_add, removed=to_remove)
 
     async def sync(self):
-        count = {"synced": 0, "cached": 0, "errored": 0}
+        stats = SyncStats()
         diffs_added, diffs_removed = LessonPool(), LessonPool()
 
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             for result in await asyncio.gather(
                     *[self.__sync_group(group, session) for group in groups], return_exceptions=True):
-                if isinstance(result, BaseException):
-                    count["errored"] += 1
-                    logging.error(f"Sync exception:")
+                if isinstance(result, SyncReport):
+                    if result.cached:
+                        stats.cached += 1
+                    else:
+                        stats.synced += 1
+                        diffs_added.merge(result.added)
+                        diffs_removed.merge(result.removed)
+                elif isinstance(result, BaseException):
+                    stats.errored += 1
 
-                    # backward compatibility for 3.9
-                    # https://docs.python.org/3/library/traceback.html#traceback.print_exception
-                    traceback.print_exception(..., result, result.__traceback__)
-                elif result.cached:
-                    count["cached"] += 1
-                else:
-                    count["synced"] += 1
-                    diffs_added.merge(result.added)
-                    diffs_removed.merge(result.removed)
+                    # TODO: We filter JSONDecodeError caused by empty response,
+                    #       but it'll be better to check it on receive.
+                    if not isinstance(result, json.JSONDecodeError):
+                        logging.error("Sync exception:")
 
-        # We don't want to litter log
+                        # backward compatibility for 3.9
+                        # https://docs.python.org/3/library/traceback.html#traceback.print_exception
+                        traceback.print_exception(..., result, result.__traceback__)
+
+        # TODO: storing stats instead of printing log
         # logging.info(f"Day syncing has been done (weekday: {self.weekday}, synced: {count['synced']}, "
         #              f"cached: {count['cached']}, errored: {count['errored']})")
 

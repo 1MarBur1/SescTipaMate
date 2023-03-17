@@ -1,6 +1,6 @@
 class ChatDataStorage:
     def __init__(self):
-        with open("ids.txt") as file:
+        with open("../ids.txt") as file:
             self.joinedChats = {int(i[0]): {
                 "group": int(i[1]),
                 "mail": i[2] == "True",

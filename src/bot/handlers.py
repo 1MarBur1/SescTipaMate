@@ -40,23 +40,12 @@ async def manage_settings(message: Message, dialog_manager: DialogManager):
 @dispatcher.message_handler(commands=["menu"])
 async def open_menu(message: Message):
     # TODO: create menu with aiogram_dialog
-
-    # defaultButtons = types.InlineKeyboardMarkup()
-    # button1 = types.InlineKeyboardButton(i18n.string("menu_today"), callback_data="openToday")
-    # button2 = types.InlineKeyboardButton(i18n.string("menu_tomorrow"), callback_data="openTomorrow")
-    # button_dnevnik = types.InlineKeyboardButton(i18n.string("menu_lycreg"), url="https://lycreg.urfu.ru/")
-    # defaultButtons.add(button1)
-    # defaultButtons.add(button2)
-    # defaultButtons.add(button_dnevnik)
-
-    # await bot.send_message(message.chat.id, i18n.string("menu_welcome", name=message.from_user.first_name),
-    #                        reply_markup=defaultButtons)
     await message.reply("Nothing here yet...")
 
 
-@dispatcher.message_handler(commands=["audiences"])
+@dispatcher.message_handler(commands=["auditories"])
 async def send_audiences(message: Message):
-    with open("../../assets/audiences.png", mode="rb") as image:
+    with open("../assets/auditories.png", mode="rb") as image:
         await message.reply_photo(image)
 
 

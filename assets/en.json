@@ -1,0 +1,41 @@
+{
+  "help": "/start - to start using bot\n/settings - open settings menu\n/today - send today's schedule\n/tomorrow - send tomorrow's schedule\n/auditories - where auditories are located",
+  "welcome": "\uD83D\uDD25 Hey there, <b>{name}</b>! \uD83D\uDD25\nIf you are studying in SESC UrFU you must know actual schedule everyday and now I will help you with it =)\nBut to start set your class via /settings",
+
+  "user_already_registered": "You has already registered and can use the bot!",
+  "group_already_registered": "This group has already registered! If you want to register yourself you should write me in a private chat",
+  "unselected_group": "Please choose your class via /settings",
+  "unregistered_chat": "Firstly, you should register via /start",
+
+  "you_are_not_admin": "You are not admin =/\nWrite to @xmarburx",
+  "accounts_amount": "Registered {amount} accounts:\n",
+
+  "mail": {
+    "schedule_header": "\uD83D\uDDD3 Schedule for <b>{date}</b>:",
+    "diff_header": "⚠\uFE0F Changes for <b>{date}</b>:",
+    "no_schedule": "There is no lessons for <b>{date}</b> =(",
+    "weekend": "{date} is a weekend! Wheee!"
+  },
+
+  "menu": {
+    "welcome": "You are in the most awesome menu of this city",
+    "today": "Today's schedule",
+    "tomorrow": "Tomorrow's schedule",
+    "lycreg": "Open el. journal"
+  },
+
+  "settings": {
+    "header": "<b>Settings</b>\nIt's place to change bot configuration",
+    "group": {
+      "": "Class: {group}",
+      "header": "<b>Settings → Class\nCurrent class</b>: {group}\n\nSend class in format '12U'\n⚠ <i>New class will replace old</i>",
+      "set": "Class has been set: <b>{before} → {after}</b>",
+      "unknown": "Unknown class",
+      "already_set": "This class have already set"
+    },
+    "mail": "Mail",
+    "pin": "Pin mail",
+    "news": "Update notifications",
+    "done": "Return ↩"
+  }
+}

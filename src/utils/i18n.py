@@ -1,45 +1,32 @@
 import json
+import os
 
 
 class I18nProvider:
     def __init__(self):
         self.messages = {}
-
-        # FIXME: nested "with" context won't work
-        self.current_lang = "ru"  # <-- only language yet
-        self.lang_context = False
-
-    def __enter__(self):
-        self.lang_context = True
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.__reset_lang()
-        self.lang_context = False
+        self.current_lang = "ru"
 
     def string(self, key, **kwargs):
-        if self.current_lang is None:
-            raise ValueError("Language does not exists or not specified")
-        lang = self.current_lang
-
-        if not self.lang_context:
-            self.__reset_lang()
-
         class Default(dict):
             def __missing__(self, __key):
                 return "{" + __key + "}"
 
-        return self.messages[lang][key].format_map(Default(**kwargs))
+        return self.messages[self.current_lang][key].format_map(Default(**kwargs))
 
-    def using_lang(self, lang):
+    def use_lang(self, lang):
+        if lang not in self.messages:
+            raise ValueError(f"Language {lang} does not exists or not loaded")
+
         self.current_lang = lang
         return self
 
-    def __reset_lang(self):
-        self.current_lang = "ru"
-
     def load_lang(self, lang):
-        with open(f"assets/{lang}.json", encoding="utf-8") as file:
+        path = f"../assets/{lang}.json"
+        if not os.path.exists(path):
+            raise ValueError(f"Localization file for \"{lang}\" language not found")
+
+        with open(path, encoding="utf-8") as file:
             self.messages[lang] = json.loads(file.read())
 
 

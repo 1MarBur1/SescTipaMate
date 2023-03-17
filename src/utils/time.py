@@ -25,14 +25,14 @@ def every(interval):
     return __task_decorator
 
 
-def everyday_at(time_repr: str):
+def everyday(time_repr: str):
     try:
         time_repr = tuple(map(int, time_repr.split(":")))
         hour, minute, second = time_repr[0], time_repr[1], 0
         if len(time_repr) == 3:
             second = time_repr[2]
     except (ValueError, KeyError) as exc:
-        logging.error("Time stamp has given in wrong format")
+        logging.error("Time stamp was given in wrong format")
         raise exc
 
     def __task_decorator(task_func):

@@ -9,7 +9,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode
 from aiogram.utils import executor
-from dotenv import load_dotenv
 
 from src.data.chats import database
 from src.data.schedule import ScheduleProvider
@@ -17,7 +16,6 @@ from src.dialogs.registry import init_dialogs
 from src.utils.i18n import i18n
 from src.utils.time import current_local_time
 
-load_dotenv()
 
 # TODO: put admins to .env
 admins = [
@@ -25,16 +23,27 @@ admins = [
     423052299
 ]
 
-bot = Bot(
-    token=os.getenv("AUTH_TOKEN" if "testing" not in sys.argv else "TEST_TOKEN"),
-    parse_mode=ParseMode.HTML
-)
+BOT_TOKEN = None
+
+if "production" in sys.argv:
+    logging.info("Running in production mode")
+    BOT_TOKEN = os.getenv("PROD_TOKEN")
+    if BOT_TOKEN is None:
+        logging.warning("Production bot token not specified, fallback to test mode")
+
+if BOT_TOKEN is None:
+    ...
+
+
+bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 
 storage = MemoryStorage()
 dispatcher = Dispatcher(bot, storage=storage)
 schedule = ScheduleProvider()
 
 PASTEBIN_AUTH_TOKEN = os.getenv("PASTEBIN_AUTH_TOKEN")
+
+SUPPORTED_LANGUAGES = ["en", "ru"]
 
 
 def get_ids_list():
@@ -65,7 +74,8 @@ async def backup():
 async def on_bot_start(_):
     logging.info("Starting bot...")
 
-    i18n.load_lang("ru")
+    for lang in SUPPORTED_LANGUAGES:
+        i18n.load_lang(lang)
     init_dialogs(dispatcher)
 
     from src.bot.tasks import mail_task, fetch_task
@@ -84,5 +94,12 @@ async def on_bot_destroy(_):
     await bot.send_message(423052299, message)
 
 
+def on_uncaught_exception(exc_type, value, traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        return sys.__excepthook__(exc_type, value, traceback)
+    logging.critical("Unhandled exception", exc_info=(exc_type, value, traceback))
+
+
 def launch_bot():
+    sys.excepthook = on_uncaught_exception
     executor.start_polling(dispatcher, skip_updates=False, on_startup=on_bot_start, on_shutdown=on_bot_destroy)
