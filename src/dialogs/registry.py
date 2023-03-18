@@ -1,13 +1,13 @@
 from aiogram import Dispatcher
 from aiogram_dialog import DialogRegistry
 
-from src.bot.globals import SUPPORTED_LANGUAGES
 from src.dialogs.settings import settings_dialog, Section, Toggle, Select
 
 
 def init_dialogs(dispatcher: Dispatcher):
     dialog_registry = DialogRegistry(dispatcher)
 
+    from src.bot.globals import SUPPORTED_LANGUAGES
     dialog_registry.register(settings_dialog(
         Section(
             "general",
@@ -16,7 +16,7 @@ def init_dialogs(dispatcher: Dispatcher):
         ),
         Section(
             "mail",
-            Toggle(""),
+            Toggle("Test"),
             Toggle("pin"),
             Select("group", options=[])
         )

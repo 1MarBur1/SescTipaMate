@@ -23,17 +23,22 @@ admins = [
     423052299
 ]
 
-BOT_TOKEN = None
-
+PROD_TOKEN = None
 if "production" in sys.argv:
-    logging.info("Running in production mode")
-    BOT_TOKEN = os.getenv("PROD_TOKEN")
-    if BOT_TOKEN is None:
+    PROD_TOKEN = os.getenv("PROD_TOKEN")
+    if PROD_TOKEN is None:
         logging.warning("Production bot token not specified, fallback to test mode")
 
-if BOT_TOKEN is None:
-    ...
+TEST_TOKEN = os.getenv("TEST_TOKEN")
 
+if PROD_TOKEN:
+    logging.info("Running in production mode!")
+    BOT_TOKEN = PROD_TOKEN
+elif TEST_TOKEN:
+    logging.info("Running in testing mode.")
+    BOT_TOKEN = TEST_TOKEN
+else:
+    raise RuntimeError("Neither production nor testing token specified")
 
 bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 
