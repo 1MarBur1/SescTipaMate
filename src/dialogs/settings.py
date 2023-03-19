@@ -1,26 +1,26 @@
-from typing import Dict
+from typing import Dict, List, Any
 
 from aiogram.dispatcher.filters.state import State
-from aiogram.types import CallbackQuery, ContentType, Message
+from aiogram.types import CallbackQuery, ContentType, Message, InlineKeyboardButton
 from aiogram_dialog import Window, DialogManager, ChatEvent, ShowMode, Dialog
-from aiogram_dialog.manager.protocols import ManagedDialogAdapterProto
+from aiogram_dialog.manager.protocols import ManagedDialogAdapterProto, ManagedDialogProto
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import *
 from aiogram_dialog.widgets.text import Const, Format
 
 from src.data.chats import database
 from src.data.schedule import group_name_by_id, id_by_group_name, group_name_exists
-from src.dialogs.state import ComposableStatesGroup
+from src.dialogs.state import MutableStatesGroup
 from src.utils.i18n import i18n
 
 
 # TODO:
 #   1) close settings before message will become uneditable after 48 hours
 #   2) store message ids in database in order not to lose control after restart
-class SettingsStates(ComposableStatesGroup):
+class SettingsStates(MutableStatesGroup):
     main_state = State()
-    section_states = {}
-    select_states = {}
+    section_states: Dict[Any, State] = {}
+    select_states: Dict[Any, State] = {}
 
 
 async def on_start(start_data, dialog_manager: DialogManager):
@@ -88,23 +88,44 @@ async def group_getter(**kwargs):
 
 class Section(Keyboard):
     def __init__(self, name, *items):
-        super().__init__()
+        self.name = f"section_{name}"
+        super().__init__(self.name)
 
-        self.name = name
-        self.items = items
+        state = SettingsStates.register(State(self.name))
+        SettingsStates.section_states[self.name] = state
 
-        state = SettingsStates.register(State())
-        SettingsStates.section_states[name] = state
-
-        self.window = Window(*items, state=state)
-        self.button = Button(
-            Const(f"Section {name}"),
-            id="",
-            on_click=...
+        self.window = Window(
+            Const(f"We are in {self.name}"),
+            *items,
+            Button(
+                Const(i18n.string("settings.done")),
+                id="",
+                on_click=...
+            ),
+            state=state
         )
 
-    async def _render_keyboard(self, data: Dict, manager: DialogManager):
-        return await self.button.render_keyboard(data, manager)
+        for item in items:
+            item.register_windows()
+
+    def register_windows(self, windows):
+        windows.append(self.window)
+
+    async def _process_own_callback(self, c: CallbackQuery, dialog: ManagedDialogProto,
+                                    dialog_manager: DialogManager) -> bool:
+        target_state = SettingsStates.section_states[self.name]
+        await target_state.set()
+        await dialog_manager.switch_to(target_state)
+
+        return True
+
+    async def _render_keyboard(self, data: Dict, manager: DialogManager) -> List[List[InlineKeyboardButton]]:
+        return [[
+            InlineKeyboardButton(
+                text=await Const(f"This is {self.name}").render_text(data, manager),
+                callback_data=self.name
+            )
+        ]]
 
 
 class Toggle(Checkbox):
@@ -115,62 +136,82 @@ class Toggle(Checkbox):
             id="",
             on_state_changed=...
         )
+
         self.name = name
 
 
-class Select:
+class Select(Keyboard):
     def __init__(self, name, options, callback=None):
-        self.name = name
+        self.name = f"select_{name}"
+        super().__init__(self.name)
 
-        state = SettingsStates.register(State())
-        SettingsStates.select_states[name] = state
-
-        self.button = Button(
-            Const(f"Select {name}"),
-            id="",
-            on_click=...
-        )
+        state = SettingsStates.register(State(self.name))
+        SettingsStates.select_states[self.name] = state
 
         self.window = Window(
-            Const(f"Select {name}"),
+            Const(f"We are in {self.name}"),
             state=state
         )
 
+    def register_windows(self, windows):
+        windows.append(self.window)
+
+    async def _process_own_callback(self, c: CallbackQuery, dialog: ManagedDialogProto,
+                                    dialog_manager: DialogManager) -> bool:
+        target_state = SettingsStates.select_states[self.name]
+        await target_state.set()
+        await dialog_manager.switch_to(target_state)
+
+        return True
+
     async def _render_keyboard(self, data: Dict, manager: DialogManager):
-        return await self.button.render_keyboard(data, manager)
+        return [[
+            InlineKeyboardButton(
+                text=await Const(f"This is {self.name}").render_text(data, manager),
+                callback_data=self.name
+            )
+        ]]
 
 
 def settings_dialog(*items):
-    main_window = Window(
-        Const(i18n.string("settings.header")),
-        Button(Format(i18n.string("settings.group")), id="settings_group", on_click=set_group),
-        *(
-            Checkbox(
-                Const(i18n.string(f"settings_{i}") + "✅"),
-                Const(i18n.string(f"settings_{i}") + "🚫"),
-                id=f"settings_{i}",
-                on_state_changed=lambda e, c, m, i=i: toggle(i, e, c, m),
-            ) for i in ("mail", "pin", "news")
-        ),
-        Button(Const(i18n.string("settings.done")), id="done", on_click=on_done),
-        state=SettingsStates.main_state,
-        getter=group_getter,
-    )
+    # main_window = Window(
+    #     Const(i18n.string("settings.header")),
+    #     Button(Format(i18n.string("settings.group")), id="settings_group", on_click=set_group),
+    #     *(
+    #         Checkbox(
+    #             Const(i18n.string(f"settings.{i}") + "✅"),
+    #             Const(i18n.string(f"settings.{i}") + "🚫"),
+    #             id=f"settings_{i}",
+    #             on_state_changed=lambda e, c, m, i=i: toggle(i, e, c, m),
+    #         ) for i in ("mail", "pin", "news")
+    #     ),
+    #     Button(Const(i18n.string("settings.done")), id="done", on_click=on_done),
+    #     state=SettingsStates.main_state,
+    #     getter=group_getter,
+    # )
 
-    group_window = Window(
-        Format(i18n.string("settings.group.header")),
-        Button(Const(i18n.string("settings.done")), id="group_done", on_click=on_group_done),
-        MessageInput(on_group_send, content_types=[ContentType.TEXT]),
-        state=SettingsStates.group_state,
-        getter=group_getter,
-    )
+    # group_window = Window(
+    #     Format(i18n.string("settings.group.header")),
+    #     Button(Const(i18n.string("settings.done")), id="group_done", on_click=on_group_done),
+    #     MessageInput(on_group_send, content_types=[ContentType.TEXT]),
+    #     state=SettingsStates.group_state,
+    #     getter=group_getter,
+    # )
 
     main_window = Window(
-        *(item.render() for item in items),
+        Const("Settings"),
+        *items,
         state=SettingsStates.main_state
     )
 
-    dialog = Dialog(main_window, group_window)
-    dialog.on_start = on_start
+    windows = []
+    for item in items:
+        try:
+            item.register_windows(windows)
+        except AttributeError:
+            pass
+
+    dialog = Dialog(main_window, *windows)
+    # dialog.on_start = on_start
 
     return dialog

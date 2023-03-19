@@ -165,8 +165,8 @@ class ScheduleDay(LessonPool):
 
         return SyncReport(cached=False, added=to_add, removed=to_remove)
 
+    # TODO: measure stats
     async def sync(self):
-        stats = SyncStats()
         diffs_added, diffs_removed = LessonPool(), LessonPool()
 
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
@@ -174,13 +174,14 @@ class ScheduleDay(LessonPool):
                     *[self.__sync_group(group, session) for group in groups], return_exceptions=True):
                 if isinstance(result, SyncReport):
                     if result.cached:
-                        stats.cached += 1
+                        pass
+                        # stats.cached += 1
                     else:
-                        stats.synced += 1
+                        # stats.synced += 1
                         diffs_added.merge(result.added)
                         diffs_removed.merge(result.removed)
                 elif isinstance(result, BaseException):
-                    stats.errored += 1
+                    # stats.errored += 1
 
                     # TODO: We filter JSONDecodeError caused by empty response,
                     #       but it'll be better to check it on receive.
@@ -190,8 +191,6 @@ class ScheduleDay(LessonPool):
                         # backward compatibility for 3.9
                         # https://docs.python.org/3/library/traceback.html#traceback.print_exception
                         traceback.print_exception(..., result, result.__traceback__)
-
-        # TODO: storing stats instead of printing log
 
         return diffs_added, diffs_removed
 

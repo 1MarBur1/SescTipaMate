@@ -1,7 +1,7 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
-class ComposableStatesGroupMeta(type(StatesGroup)):
+class MutableStatesGroupMeta(type(StatesGroup)):
     def __new__(cls, name, bases, namespace, **kwargs):
         cls = super().__new__(cls, name, bases, namespace)
 
@@ -13,9 +13,10 @@ class ComposableStatesGroupMeta(type(StatesGroup)):
         return cls
 
 
-class ComposableStatesGroup(StatesGroup, metaclass=ComposableStatesGroupMeta):
+class MutableStatesGroup(StatesGroup, metaclass=MutableStatesGroupMeta):
     @classmethod
     def register(cls, state: State):
         cls.states.append(state)
         state.set_parent(cls)
+        return state
 
