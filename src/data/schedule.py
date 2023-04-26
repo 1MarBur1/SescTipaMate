@@ -10,14 +10,14 @@ from dataclasses import dataclass
 import aiohttp
 from hashlib import md5
 
-groups = {
+GROUPS = {
     0: "undefined", 1: "8А", 2: "8В", 3: "9В", 4: "9А", 5: "9Б", 6: "11А", 7: "11Б", 8: "11В", 9: "9Е", 11: "9Г",
     12: "10А", 13: "10Б", 14: "10В", 15: "10Г", 16: "10Д", 17: "10Е", 18: "10З", 19: "10К", 20: "10Л", 21: "10М",
     22: "10Н", 23: "10С", 24: "11Г", 25: "11Д", 26: "11Е", 27: "11З", 28: "11К", 29: "11Л", 30: "11М", 31: "11С",
     32: "11Н"
 }
-groups_inverse = {
-    "undefined": 0, "8А": 1, "8В": 2, "9В": 3, "9А": 4, "9Б": 5, "11А": 6, "11Б": 7, "11В": 8, "9Е": 9, "9Г": 11,
+GROUPS_INVERSE = {
+    "8А": 1, "8В": 2, "9В": 3, "9А": 4, "9Б": 5, "11А": 6, "11Б": 7, "11В": 8, "9Е": 9, "9Г": 11,
     "10А": 12, "10Б": 13, "10В": 14, "10Г": 15, "10Д": 16, "10Е": 17, "10З": 18, "10К": 19, "10Л": 20, "10М": 21,
     "10Н": 22, "10С": 23, "11Г": 24, "11Д": 25, "11Е": 26, "11З": 27, "11К": 28, "11Л": 29, "11М": 30, "11С": 31,
     "11Н": 32
@@ -25,19 +25,19 @@ groups_inverse = {
 
 
 def group_name_by_id(group_id):
-    return groups[group_id]
+    return GROUPS[group_id]
 
 
 def id_by_group_name(group_name):
-    return groups_inverse[group_name]
+    return GROUPS_INVERSE[group_name]
 
 
 def group_id_exists(group_id):
-    return group_id in groups
+    return group_id in GROUPS
 
 
 def group_name_exists(group_name):
-    return group_name in groups_inverse
+    return group_name in GROUPS_INVERSE
 
 
 @dataclass(eq=True, frozen=True)
@@ -171,7 +171,7 @@ class ScheduleDay(LessonPool):
 
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             for result in await asyncio.gather(
-                    *[self.__sync_group(group, session) for group in groups], return_exceptions=True):
+                    *[self.__sync_group(group, session) for group in GROUPS], return_exceptions=True):
                 if isinstance(result, SyncReport):
                     if result.cached:
                         pass

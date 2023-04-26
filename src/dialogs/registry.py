@@ -8,6 +8,8 @@ def init_dialogs(dispatcher: Dispatcher):
     dialog_registry = DialogRegistry(dispatcher)
 
     from src.bot.globals import SUPPORTED_LANGUAGES
+    from src.data.schedule import GROUPS_INVERSE
+
     dialog_registry.register(settings_dialog(
         Section(
             "general",
@@ -18,6 +20,6 @@ def init_dialogs(dispatcher: Dispatcher):
             "mail",
             Toggle("Test"),
             Toggle("pin"),
-            Select("group", options=[])
+            Select("group", options=GROUPS_INVERSE.keys())
         )
     ))
