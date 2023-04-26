@@ -30,7 +30,7 @@ async def mail_task():
     await schedule.sync_day(tomorrow.weekday())
 
     tasks = []
-    for chat_id in database.joinedChats:
+    for chat_id in database.joined_chats:
         chat_data = database.get_chat_data(chat_id)
         if chat_data["mail"]:
             tasks.append(asyncio.ensure_future(
@@ -44,7 +44,7 @@ async def mail_task():
             continue
         success_count += 1
 
-    logging.debug(f"Mailing done. Sent to {success_count}/{len(database.joinedChats)} users")
+    logging.debug(f"Mailing done. Sent to {success_count}/{len(database.joined_chats)} users")
 
     global diff_task, diff_day
     diff_task = asyncio.get_event_loop().create_task(check_diff_task())
@@ -57,7 +57,7 @@ async def mail_task():
 async def check_diff_task():
     diffs_added, diffs_removed = await schedule.sync_day(diff_day[0])
     tasks = []
-    for chat_id in database.joinedChats:
+    for chat_id in database.joined_chats:
         chat_data = database.get_chat_data(chat_id)
         group = chat_data["group"]
         if (diffs_added.for_group(group) or diffs_removed.for_group(group)) and chat_data["mail"]:

@@ -13,11 +13,14 @@ class I18nProvider:
             def __missing__(self, __key):
                 return "{" + __key + "}"
 
-        return self.messages[self.current_lang][key].format_map(Default(**kwargs))
+        try:
+            return self.messages[self.current_lang][key].format_map(Default(**kwargs))
+        except KeyError:
+            return key
 
     def use_lang(self, lang):
         if lang not in self.messages:
-            raise ValueError(f"Language {lang} does not exists or not loaded")
+            raise ValueError(f"Language \"{lang}\" does not exists or not loaded")
 
         self.current_lang = lang
         return self
@@ -47,7 +50,7 @@ class I18nProvider:
             match value:
                 case str():
                     # Value with empty key belongs to upper namespace, so we don't extend it in such case
-                    lang_msg[".".join(namespace + [key] if key else [])] = value
+                    lang_msg[".".join(namespace + ([key] if key else []))] = value
                 case dict():
                     if not key:
                         logging.warning("Empty key used with dict")

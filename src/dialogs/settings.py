@@ -1,15 +1,13 @@
 from typing import Dict, List, Any
 
 from aiogram.dispatcher.filters.state import State
-from aiogram.types import CallbackQuery, ContentType, Message, InlineKeyboardButton
-from aiogram_dialog import Window, DialogManager, ChatEvent, ShowMode, Dialog
-from aiogram_dialog.manager.protocols import ManagedDialogAdapterProto, ManagedDialogProto
-from aiogram_dialog.widgets.input import MessageInput
+from aiogram.types import CallbackQuery
+from aiogram_dialog import Window, DialogManager, Dialog
 from aiogram_dialog.widgets.kbd import *
 from aiogram_dialog.widgets.text import Const, Format
 
 from src.data.chats import database
-from src.data.schedule import group_name_by_id, id_by_group_name, group_name_exists
+from src.data.schedule import group_name_by_id
 from src.dialogs.state import MutableStatesGroup
 from src.utils.i18n import i18n
 
@@ -26,64 +24,23 @@ class SettingsStates(MutableStatesGroup):
 async def on_start(start_data, manager: DialogManager):
     chat_id = manager.event.chat.id
     chat_data = database.get_chat_data(chat_id)
-    for i in ("mail", "pin", "news"):
-        await manager.dialog().find(f"settings_{i}").set_checked(manager.event, chat_data[i])
-    manager.current_context().dialog_data["group"] = group_name_by_id(chat_data["group"])
 
+    checkboxes = {"settings.general.news": chat_data["news"],
+                  "settings.mail.state": chat_data["mail"],
+                  "settings.mail.pin": chat_data["pin"]}
+    for key in checkboxes:
+        await manager.dialog().find(key).set_checked(manager.event, checkboxes[key])
 
-async def set_group(query: CallbackQuery, button: Button, manager: DialogManager):
-    manager.current_context().dialog_data["last_query"] = None
-    await SettingsStates.group_state.set()
-    await manager.switch_to(SettingsStates.group_state)
-
-
-async def delete_last_query(last_query):
-    if last_query:
-        await last_query[1].delete()
-        await last_query[0].delete()
-
-
-async def on_group_send(message: Message, dialog: ManagedDialogAdapterProto, manager: DialogManager):
-    manager.show_mode = ShowMode.EDIT
     dialog_data = manager.current_context().dialog_data
-    received_group = message.text.strip().upper()
-
-    await delete_last_query(dialog_data["last_query"])
-    if group_name_exists(received_group):
-        if dialog_data["group"] == received_group:
-            answer = await message.answer(i18n.string("settings.group.already_set"))
-        else:
-            database.set_chat_data(message.chat.id, {"group": id_by_group_name(received_group)})
-
-            prev_group = dialog_data["group"]
-            dialog_data["group"] = received_group
-            answer = await message.answer(
-                i18n.string("settings.group.set", before=prev_group, after=received_group)
-            )
-    else:
-        answer = await message.answer(i18n.string("settings.group.unknown"))
-    dialog_data["last_query"] = [message, answer]
+    dialog_data["group"] = group_name_by_id(chat_data["group"])
+    dialog_data["lang"] = "ru"
 
 
-async def on_group_done(query: CallbackQuery, button: Button, manager: DialogManager):
-    await delete_last_query(manager.current_context().dialog_data["last_query"])
-    await SettingsStates.main_state.set()
-    await manager.switch_to(SettingsStates.main_state)
-
-
-async def toggle(option, event: ChatEvent, checkbox: ManagedCheckboxAdapter, manager: DialogManager):
-    chat_id = event.message.chat.id if isinstance(event, CallbackQuery) else event.chat.id
-    database.set_chat_data(chat_id, {option: checkbox.is_checked()})
-
-
-async def on_done(query: CallbackQuery, button: Button, manager: DialogManager):
-    await query.message.delete()
-    await manager.done()
-    await manager.data["state"].finish()
-
-
-async def group_getter(**kwargs):
-    return {"group": kwargs["dialog_manager"].current_context().dialog_data["group"]}
+async def getter(**kwargs):
+    return {
+        "group": kwargs["dialog_manager"].current_context().dialog_data["group"],
+        "lang": kwargs["dialog_manager"].current_context().dialog_data["lang"]
+    }
 
 
 class Section:
@@ -91,7 +48,9 @@ class Section:
         self.name = f"{name}"
         self.children = items
 
-    def build(self, windows: List[Window], parent: State):
+    def build(self, windows: List[Window], parent: State, path: str):
+        path = f"{path}.{self.name}"
+
         state = SettingsStates.register(State(self.name))
         SettingsStates.section_states[self.name] = state
 
@@ -102,8 +61,8 @@ class Section:
             await manager.dialog().switch_to(parent)
 
         window = Window(
-            Const(f"We are in {self.name}"),
-            *[item.build(windows, state) for item in self.children],
+            Const(i18n.string(f"{path}.header")),
+            *[item.build(windows, state, path) for item in self.children],
             Button(
                 Const(i18n.string("settings.done")),
                 on_click=close_window,
@@ -115,7 +74,7 @@ class Section:
         windows.append(window)
 
         return Button(
-            Const(f"This is {self.name}"),
+            Const(i18n.string(path)),
             on_click=open_window,
             id=self.name
         )
@@ -123,22 +82,27 @@ class Section:
 
 class Toggle:
     def __init__(self, name, callback=None):
-        self.name = f"toggle_{name}"
+        self.name = name
+        self.callback = callback
 
-    def build(self, windows: List[Window], parent: State):
+    def build(self, windows: List[Window], parent: State, path: str):
+        path = f"{path}.{self.name}"
+
         return Checkbox(
-            Const(f"Toggle {self.name} ✅"),
-            Const(f"Toggle {self.name} 🚫"),
-            id=self.name,
-            on_state_changed=...
+            Const(i18n.string(f"{path}.enabled")),
+            Const(i18n.string(f"{path}.disabled")),
+            id=path,
+            on_state_changed=self.callback
         )
 
 
 class Select:
     def __init__(self, name, options, callback=None):
-        self.name = f"select_{name}"
+        self.name = name
 
-    def build(self, windows: List[Window], parent: State):
+    def build(self, windows: List[Window], parent: State, path: str):
+        path = f"{path}.{self.name}"
+
         state = SettingsStates.register(State(self.name))
         SettingsStates.select_states[self.name] = state
 
@@ -149,7 +113,7 @@ class Select:
             await manager.dialog().switch_to(parent)
 
         window = Window(
-            Const(f"We are in {self.name}"),
+            Format(i18n.string(f"{path}.header")),
             Button(
                 Const(i18n.string("settings.done")),
                 on_click=close_window,
@@ -161,46 +125,26 @@ class Select:
         windows.append(window)
 
         return Button(
-            Const(f"This is {self.name}"),
+            Format(i18n.string(path)),
             on_click=open_window,
             id=self.name
         )
 
 
 def settings_dialog(*items):
-    # main_window = Window(
-    #     Const(i18n.string("settings.header")),
-    #     Button(Format(i18n.string("settings.group")), id="settings_group", on_click=set_group),
-    #     *(
-    #         Checkbox(
-    #             Const(i18n.string(f"settings.{i}") + "✅"),
-    #             Const(i18n.string(f"settings.{i}") + "🚫"),
-    #             id=f"settings_{i}",
-    #             on_state_changed=lambda e, c, m, i=i: toggle(i, e, c, m),
-    #         ) for i in ("mail", "pin", "news")
-    #     ),
-    #     Button(Const(i18n.string("settings.done")), id="done", on_click=on_done),
-    #     state=SettingsStates.main_state,
-    #     getter=group_getter,
-    # )
-
-    # group_window = Window(
-    #     Format(i18n.string("settings.group.header")),
-    #     Button(Const(i18n.string("settings.done")), id="group_done", on_click=on_group_done),
-    #     MessageInput(on_group_send, content_types=[ContentType.TEXT]),
-    #     state=SettingsStates.group_state,
-    #     getter=group_getter,
-    # )
-
     windows = []
 
     main_window = Window(
         Const(i18n.string("settings.header")),
-        *[item.build(windows, SettingsStates.main_state) for item in items],
+        *[item.build(windows, SettingsStates.main_state, "settings") for item in items],
+        Button(
+            Const(i18n.string("settings.done")),
+            id="rickastley"
+        ),
         state=SettingsStates.main_state
     )
 
-    dialog = Dialog(main_window, *windows)
-    # dialog.on_start = on_start
+    dialog = Dialog(main_window, *windows, getter=getter)
+    dialog.on_start = on_start
 
     return dialog

@@ -52,14 +52,13 @@ SUPPORTED_LANGUAGES = ["en", "ru"]
 
 
 def get_ids_list():
-    ids_list = i18n.string("accounts_amount", amount=len(database.joinedChats))
-    ids_list += "```"
-    for chat_id in database.joinedChats:
+    # ids_list = i18n.string("accounts_amount", amount=len(database.joinedChats))
+    ids_list = ""
+    for chat_id in database.joined_chats:
         chat_data = database.get_chat_data(chat_id)
-        ids_list += "\n"
         ids_list += ",".join(map(str, [chat_id, chat_data["group"], chat_data["mail"], chat_data["pin"],
                                        chat_data["pinned_message"], chat_data["news"]]))
-    ids_list += "```"
+        ids_list += "\n"
 
     return ids_list
 
@@ -99,6 +98,9 @@ async def on_bot_destroy(_):
     # await bot.send_message(423052299, message)
 
     await bot.send_message(423052299, "No backup, hehehe")
+
+    with open("ids.txt", mode="w") as file:
+        file.write(get_ids_list())
 
 
 def on_uncaught_exception(exc_type, value, traceback):

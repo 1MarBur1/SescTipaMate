@@ -25,7 +25,7 @@
   },
 
   "settings": {
-    "header": "<b>Settings</b>\nIt's place to change bot configuration",
+    "header": "⚙\uFE0F <b>Settings</b>\nIt's place to change bot configuration",
     "group": {
       "": "Class: {group}",
       "header": "<b>Settings → Class\nCurrent class</b>: {group}\n\nSend class in format '12U'\n⚠ <i>New class will replace old</i>",

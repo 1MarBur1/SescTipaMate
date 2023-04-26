@@ -18,7 +18,7 @@ def init_dialogs(dispatcher: Dispatcher):
         ),
         Section(
             "mail",
-            Toggle("Test"),
+            Toggle("state"),
             Toggle("pin"),
             Select("group", options=GROUPS_INVERSE.keys())
         )

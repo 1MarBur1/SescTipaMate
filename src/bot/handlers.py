@@ -81,7 +81,7 @@ async def send_tomorrow(message: Message):
 @dispatcher.message_handler(commands=["announcement"])
 async def send_announcement(message: Message):
     if message.chat.id in admins:
-        for chat_id in database.joinedChats:
+        for chat_id in database.joined_chats:
             chat_data = database.get_chat_data(chat_id)
             if chat_data["mail"]:
                 try:
