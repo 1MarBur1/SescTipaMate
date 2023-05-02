@@ -21,38 +21,21 @@ class SettingsStates(MutableStatesGroup):
     select_states: Dict[Any, State] = {}
 
 
-async def on_start(start_data, manager: DialogManager):
-    chat_id = manager.event.chat.id
-    chat_data = database.get_chat_data(chat_id)
-
-    checkboxes = {"settings.general.news": chat_data["news"],
-                  "settings.mail.state": chat_data["mail"],
-                  "settings.mail.pin": chat_data["pin"]}
-    for key in checkboxes:
-        await manager.dialog().find(key).set_checked(manager.event, checkboxes[key])
-
-    dialog_data = manager.current_context().dialog_data
-    dialog_data["group"] = group_name_by_id(chat_data["group"])
-    dialog_data["lang"] = "ru"
-
-
-async def getter(**kwargs):
-    return {
-        "group": kwargs["dialog_manager"].current_context().dialog_data["group"],
-        "lang": kwargs["dialog_manager"].current_context().dialog_data["lang"]
-    }
-
-
 class Section:
     def __init__(self, name, *items):
         self.name = f"{name}"
         self.children = items
 
+    def create_state(self):
+        state = SettingsStates.register(State(self.name))
+        SettingsStates.section_states[self.name] = state
+
+        return state
+
     def build(self, windows: List[Window], parent: State, path: str):
         path = f"{path}.{self.name}"
 
-        state = SettingsStates.register(State(self.name))
-        SettingsStates.section_states[self.name] = state
+        state = self.create_state()
 
         async def open_window(query: CallbackQuery, button: Button, manager: DialogManager):
             await manager.switch_to(SettingsStates.section_states[self.name])
@@ -80,6 +63,56 @@ class Section:
         )
 
 
+class Select:
+    def __init__(self, name, options, resolver=None, callback=None):
+        """
+
+        :param name:
+        :param options:
+        :param resolver:
+        :param callback:
+        """
+
+        self.name = name
+        self.options = list(options)
+
+    def build(self, windows: List[Window], parent: State, path: str):
+        path = f"{path}.{self.name}"
+
+        state = SettingsStates.register(State(self.name))
+        SettingsStates.select_states[self.name] = state
+
+        async def open_window(query: CallbackQuery, button: Button, manager: DialogManager):
+            await manager.switch_to(SettingsStates.select_states[self.name])
+
+        async def close_window(query: CallbackQuery, button: Button, manager: DialogManager):
+            await manager.dialog().switch_to(parent)
+
+        window = Window(
+            Format(i18n.string(f"{path}.header")),
+            ScrollingGroup(
+                *[Button(Const(v), id="hehe" + str(i)) for i, v in enumerate(self.options)],
+                width=5,
+                height=7,
+                id="sg"
+            ),
+            # Button(
+            #     Const(i18n.string("settings.done")),
+            #     on_click=close_window,
+            #     id=self.name + "return"
+            # ),
+            state=state
+        )
+
+        windows.append(window)
+
+        return Button(
+            Format(i18n.string(path)),
+            on_click=open_window,
+            id=self.name
+        )
+
+
 class Toggle:
     def __init__(self, name, callback=None):
         self.name = name
@@ -96,39 +129,28 @@ class Toggle:
         )
 
 
-class Select:
-    def __init__(self, name, options, callback=None):
-        self.name = name
+async def on_dialog_start(start_data, manager: DialogManager):
+    chat_id = manager.event.chat.id
+    chat_data = database.get_chat_data(chat_id)
 
-    def build(self, windows: List[Window], parent: State, path: str):
-        path = f"{path}.{self.name}"
+    checkboxes = {"settings.general.news": chat_data["news"],
+                  "settings.mail.state": chat_data["mail"],
+                  "settings.mail.pin": chat_data["pin"]}
+    for key in checkboxes:
+        await manager.dialog().find(key).set_checked(manager.event, checkboxes[key])
 
-        state = SettingsStates.register(State(self.name))
-        SettingsStates.select_states[self.name] = state
+    dialog_data = manager.current_context().dialog_data
+    dialog_data["group"] = group_name_by_id(chat_data["group"])
+    dialog_data["lang"] = "ru"
 
-        async def open_window(query: CallbackQuery, button: Button, manager: DialogManager):
-            await manager.switch_to(SettingsStates.select_states[self.name])
 
-        async def close_window(query: CallbackQuery, button: Button, manager: DialogManager):
-            await manager.dialog().switch_to(parent)
+async def on_dialog_end(query: CallbackQuery, button: Button, manager: DialogManager):
+    await manager.done()
 
-        window = Window(
-            Format(i18n.string(f"{path}.header")),
-            Button(
-                Const(i18n.string("settings.done")),
-                on_click=close_window,
-                id=self.name + "return"
-            ),
-            state=state
-        )
 
-        windows.append(window)
-
-        return Button(
-            Format(i18n.string(path)),
-            on_click=open_window,
-            id=self.name
-        )
+async def getter(**kwargs):
+    dialog_data = kwargs["dialog_manager"].current_context().dialog_data
+    return {"group": dialog_data["group"], "lang": dialog_data["lang"]}
 
 
 def settings_dialog(*items):
@@ -139,12 +161,13 @@ def settings_dialog(*items):
         *[item.build(windows, SettingsStates.main_state, "settings") for item in items],
         Button(
             Const(i18n.string("settings.done")),
+            on_click=on_dialog_end,
             id="rickastley"
         ),
         state=SettingsStates.main_state
     )
 
     dialog = Dialog(main_window, *windows, getter=getter)
-    dialog.on_start = on_start
+    dialog.on_start = on_dialog_start
 
     return dialog

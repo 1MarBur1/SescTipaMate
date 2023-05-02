@@ -32,7 +32,7 @@ def everyday(time_repr: str):
         if len(time_repr) == 3:
             second = time_repr[2]
     except (ValueError, KeyError) as exc:
-        logging.error("Time stamp was given in wrong format")
+        logging.error("Time stamp must be given in HH:MM[:SS] format")
         raise exc
 
     def __task_decorator(task_func):

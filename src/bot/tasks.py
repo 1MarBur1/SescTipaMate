@@ -13,13 +13,12 @@ from src.bot.globals import bot, schedule
 
 diff_task: Task
 
-# FIXME: Weekday and strftime we are checking diff for. Need to create `Day` data class
+# TODO: Weekday and strftime we are checking diff for. Let's create `Day` data class
 diff_day = ()
 
 
 @everyday("16:00")
 async def mail_task():
-    # TODO: Mail message welcome
     tomorrow = current_local_time() + timedelta(days=1)
 
     if tomorrow.weekday() == 6:
@@ -32,7 +31,7 @@ async def mail_task():
     tasks = []
     for chat_id in database.joined_chats:
         chat_data = database.get_chat_data(chat_id)
-        if chat_data["mail"]:
+        if chat_data["mail"] and chat_data["group"] != 0:
             tasks.append(asyncio.ensure_future(
                 bot.send_message(chat_id, format_schedule(schedule.for_group(chat_data["group"], tomorrow.weekday()),
                                                           tomorrow.strftime("%d.%m.%Y")))

@@ -13,13 +13,15 @@ def init_dialogs(dispatcher: Dispatcher):
     dialog_registry.register(settings_dialog(
         Section(
             "general",
-            Select("lang", options=SUPPORTED_LANGUAGES),
+            Select("lang",
+                   options=SUPPORTED_LANGUAGES),
             Toggle("news")
         ),
         Section(
             "mail",
             Toggle("state"),
-            Toggle("pin"),
-            Select("group", options=GROUPS_INVERSE.keys())
+            Select("group",
+                   options=GROUPS_INVERSE.keys()),
+            Toggle("pin")
         )
     ))
