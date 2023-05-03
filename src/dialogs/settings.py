@@ -64,17 +64,9 @@ class Section:
 
 
 class Select:
-    def __init__(self, name, options, resolver=None, callback=None):
-        """
-
-        :param name:
-        :param options:
-        :param resolver:
-        :param callback:
-        """
-
+    def __init__(self, name, options):
         self.name = name
-        self.options = list(options)
+        self.options = options
 
     def build(self, windows: List[Window], parent: State, path: str):
         path = f"{path}.{self.name}"
@@ -90,17 +82,12 @@ class Select:
 
         window = Window(
             Format(i18n.string(f"{path}.header")),
-            ScrollingGroup(
-                *[Button(Const(v), id="hehe" + str(i)) for i, v in enumerate(self.options)],
-                width=5,
-                height=7,
-                id="sg"
+
+            Button(
+                Const(i18n.string("settings.done")),
+                on_click=close_window,
+                id=self.name + "return"
             ),
-            # Button(
-            #     Const(i18n.string("settings.done")),
-            #     on_click=close_window,
-            #     id=self.name + "return"
-            # ),
             state=state
         )
 
