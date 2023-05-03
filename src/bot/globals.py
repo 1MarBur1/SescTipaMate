@@ -9,7 +9,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.types import ParseMode
 from aiogram.utils import executor
-from dotenv import load_dotenv
 
 from src.data.chats import database
 from src.data.schedule import ScheduleProvider
@@ -17,7 +16,6 @@ from src.dialogs.registry import init_dialogs
 from src.utils.i18n import i18n
 from src.utils.time import current_local_time
 
-load_dotenv()
 
 # TODO: put admins to .env
 admins = [
@@ -26,7 +24,7 @@ admins = [
 ]
 
 bot = Bot(
-    token=os.getenv("AUTH_TOKEN" if "testing" not in sys.argv else "TEST_TOKEN"),
+    token=os.getenv("TEST_TOKEN" if "testing" in sys.argv else "PROD_TOKEN"),
     parse_mode=ParseMode.HTML
 )
 
@@ -84,5 +82,12 @@ async def on_bot_destroy(_):
     await bot.send_message(423052299, message)
 
 
+def on_uncaught_exception(exc_type, value, traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        return sys.__excepthook__(exc_type, value, traceback)
+    logging.critical("Unhandled exception", exc_info=(exc_type, value, traceback))
+
+
 def launch_bot():
+    sys.excepthook = on_uncaught_exception
     executor.start_polling(dispatcher, skip_updates=False, on_startup=on_bot_start, on_shutdown=on_bot_destroy)
