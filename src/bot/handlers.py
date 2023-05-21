@@ -45,7 +45,7 @@ async def open_menu(message: Message):
 
 @dispatcher.message_handler(commands=["auditories"])
 async def send_audiences(message: Message):
-    with open("../assets/auditories.png", mode="rb") as image:
+    with open("assets/auditories.png", mode="rb") as image:
         await message.reply_photo(image)
 
 
@@ -96,5 +96,5 @@ async def send_admin_log(message: Message):
     if message.chat.id in admins:
         await message.reply(await backup())
     else:
-        with open("../assets/rickroll.gif", mode="rb") as rickroll:
+        with open("assets/rickroll.gif", mode="rb") as rickroll:
             await message.reply_animation(rickroll)

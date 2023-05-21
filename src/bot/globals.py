@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import sys
-from datetime import timedelta
 
 import aiohttp
 from aiogram import Bot, Dispatcher
@@ -14,7 +13,6 @@ from src.data.chats import database
 from src.data.schedule import ScheduleProvider
 from src.dialogs.registry import init_dialogs
 from src.utils.i18n import i18n
-from src.utils.time import current_local_time
 
 
 # TODO: put admins to .env
@@ -82,12 +80,10 @@ async def on_bot_start(_):
         i18n.load_lang(lang)
     init_dialogs(dispatcher)
 
-    from src.bot.tasks import mail_task, fetch_task
-    asyncio.get_event_loop().create_task(mail_task())
-    asyncio.get_event_loop().create_task(fetch_task())
+    from src.bot.tasks import on_tasks_setup
+    on_tasks_setup(asyncio.get_event_loop())
 
-    await schedule.sync_day(current_local_time().weekday())
-    await schedule.sync_day((current_local_time() + timedelta(days=1)).weekday())
+    await schedule.sync_all()
 
 
 async def on_bot_destroy(_):

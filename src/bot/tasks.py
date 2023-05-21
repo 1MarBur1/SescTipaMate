@@ -17,6 +17,12 @@ diff_task: Task
 diff_day = ()
 
 
+def on_tasks_setup(event_loop):
+    event_loop.create_task(mail_task())
+    event_loop.create_task(fetch_task())
+    event_loop.create_task(stop_diff_task())
+
+
 @everyday("16:00")
 async def mail_task():
     tomorrow = current_local_time() + timedelta(days=1)
@@ -86,7 +92,8 @@ async def stop_diff_task():
 async def fetch_task():
     logging.debug("Ready to start everyday syncing...")
 
-    await schedule.sync_day(current_local_time().weekday())
-    await schedule.sync_day((current_local_time() + timedelta(days=1)).weekday())
+    day = current_local_time().weekday()
+    await schedule.sync_day(day)
+    await schedule.sync_day(day + 1)
 
     logging.debug("Syncing done")

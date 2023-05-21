@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import json
 import logging
 import traceback
@@ -22,6 +23,11 @@ GROUPS_INVERSE = {
     "10Н": 22, "10С": 23, "11Г": 24, "11Д": 25, "11Е": 26, "11З": 27, "11К": 28, "11Л": 29, "11М": 30, "11С": 31,
     "11Н": 32
 }
+
+SyncResult = namedtuple("SyncReport", ["cached", "added", "removed"], defaults=(False, None, None))
+
+# TODO: Sync statistic
+# SyncStats = namedtuple("SyncStats", ["synced", "cached", "errored"], defaults=(0, 0, 0))
 
 
 def group_name_by_id(group_id):
@@ -48,13 +54,16 @@ class Lesson:
     subgroup: int
     teacher: str
     number: int
-    is_diff: bool
+    diff: bool
+
+    def copy(self, **changes):
+        return dataclasses.replace(self, **changes)
 
     @staticmethod
-    def from_json(d, is_diff=False):
+    def from_json(d, diff=False):
         try:
             return Lesson(d["subject"], d["auditory"], id_by_group_name(d["group"]),
-                          d["subgroup"], d["teacher"], d["number"], is_diff)
+                          d["subgroup"], d["teacher"], d["number"], diff)
         except KeyError:
             raise ValueError("Missed required lesson parameters")
 
@@ -114,93 +123,80 @@ class LessonPool:
         return LessonPool.Iterator(self)
 
 
-SyncReport = namedtuple("SyncReport", ["cached", "added", "removed"])
-SyncStats = namedtuple("SyncStats", ["synced", "cached", "errored"], defaults=(0, 0, 0))
+class ScheduleProvider:
+    def __init__(self):
+        self.week = [LessonPool() for day in range(7)]
+        self.sync_hash = [defaultdict(str) for day in range(7)]
 
+        self.host_url = "https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={day}&group={group}"
+        self.session = aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(ssl=False, limit_per_host=5))
 
-class ScheduleDay(LessonPool):
-    def __init__(self, weekday: int):
-        super().__init__()
-
-        self.weekday = weekday
-        self.sync_hash = defaultdict(str)
-
-    async def __sync_group(self, group, session: aiohttp.ClientSession) -> SyncReport:
-        url = f"https://lyceum.urfu.ru/?type=11&scheduleType=group&weekday={self.weekday + 1}&group={group}"
-        async with session.get(url) as response:
+    async def sync_group(self, group, day) -> SyncResult:
+        async with self.session.get(self.host_url.format(day=day + 1, group=group)) as response:
             data = await response.text()
 
         hash_ = md5(data.encode()).hexdigest()
-        if self.sync_hash[group] == hash_:
-            return SyncReport(cached=True, added=None, removed=None)
+        if self.sync_hash[day][group] == hash_:
+            return SyncResult(cached=True)
 
-        self.sync_hash[group] = hash_
+        self.sync_hash[day][group] = hash_
         data = json.loads(data)
 
-        diffed = set()
+        diffs = set()
         to_add = LessonPool()
         to_remove = LessonPool()
 
         for entry in data["diffs"]:
-            lesson = Lesson.from_json(entry, is_diff=True)
-            diffed.add(lesson.number)
+            lesson = Lesson.from_json(entry, diff=True)
+            diffs.add(lesson.number)
             to_add.add(lesson)
 
         for entry in data["lessons"]:
             lesson = Lesson.from_json(entry)
-            if lesson.number not in diffed:
+            if lesson.number not in diffs:
                 to_add.add(lesson)
 
-        for lesson in self.for_group(group):
+        for lesson in self.for_group(group, day):
             if lesson in to_add:
                 to_add.remove(lesson)
             else:
                 to_remove.add(lesson)
 
         for lesson in to_add:
-            self.add(lesson)
+            self.week[day].add(lesson)
 
         for lesson in to_remove:
-            self.remove(lesson)
+            self.week[day].remove(lesson)
 
-        return SyncReport(cached=False, added=to_add, removed=to_remove)
+        return SyncResult(added=to_add, removed=to_remove)
 
-    # TODO: measure stats
-    async def sync(self):
+    async def sync_day(self, day: int):
         diffs_added, diffs_removed = LessonPool(), LessonPool()
 
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-            for result in await asyncio.gather(
-                    *[self.__sync_group(group, session) for group in GROUPS], return_exceptions=True):
-                if isinstance(result, SyncReport):
-                    if result.cached:
-                        pass
-                        # stats.cached += 1
-                    else:
-                        # stats.synced += 1
-                        diffs_added.merge(result.added)
-                        diffs_removed.merge(result.removed)
-                elif isinstance(result, BaseException):
-                    # stats.errored += 1
+        for result in await asyncio.gather(
+                *[self.sync_group(day, group) for group in GROUPS], return_exceptions=True):
+            if isinstance(result, SyncResult):
+                if result.cached:
+                    pass
+                else:
+                    diffs_added.merge(result.added)
+                    diffs_removed.merge(result.removed)
+            elif isinstance(result, BaseException):
+                # TODO: We filter JSONDecodeError caused by empty response,
+                #       but there will be better to check it on receive.
+                if not isinstance(result, json.JSONDecodeError):
+                    logging.error("Sync exception:")
 
-                    # TODO: We filter JSONDecodeError caused by empty response,
-                    #       but it'll be better to check it on receive.
-                    if not isinstance(result, json.JSONDecodeError):
-                        logging.error("Sync exception:")
-
-                        # backward compatibility for 3.9
-                        # https://docs.python.org/3/library/traceback.html#traceback.print_exception
-                        traceback.print_exception(..., result, result.__traceback__)
+                    # backward compatibility for 3.9
+                    # https://docs.python.org/3/library/traceback.html#traceback.print_exception
+                    traceback.print_exception(..., result, result.__traceback__)
 
         return diffs_added, diffs_removed
 
-
-class ScheduleProvider:
-    def __init__(self):
-        self.week = [ScheduleDay(day) for day in range(7)]
-
-    async def sync_day(self, day):
-        return await self.week[day].sync()
+    async def sync_all(self):
+        for day in range(7):
+            await self.sync_day(day)
 
     def for_group(self, group, day, week=None):
         return self.week[day].for_group(group)

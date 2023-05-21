@@ -1,6 +1,5 @@
 import asyncio
-import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from functools import wraps
 
@@ -12,7 +11,7 @@ def current_local_time():
     return datetime.now(tz=TIME_ZONE)
 
 
-def every(interval):
+def every(interval: timedelta):
     def __task_decorator(task_func):
 
         @wraps(task_func)
@@ -32,10 +31,10 @@ def everyday(time_repr: str):
         if len(time_repr) == 3:
             second = time_repr[2]
     except (ValueError, KeyError) as exc:
-        logging.error("Time stamp must be given in HH:MM[:SS] format")
-        raise exc
+        raise ValueError("Time stamp must be given in HH:MM[:SS] format") from exc
 
     def __task_decorator(task_func):
+
         @wraps(task_func)
         async def __decorated_task():
             while True:
@@ -44,6 +43,6 @@ def everyday(time_repr: str):
                          (now.hour * 3600 + now.minute * 60 + now.second)) % 86400
                 await asyncio.sleep(delay)
                 await task_func()
-        return __decorated_task
 
+        return __decorated_task
     return __task_decorator
